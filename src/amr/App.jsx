@@ -53,8 +53,8 @@ export default function App() {
       <header className="border-b border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
-              <Eye size={18} className="text-accent" />
+            <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center">
+              <Eye size={18} className="text-brand" />
             </div>
             <div>
               <h1 className="font-semibold text-ink text-lg leading-tight">AMR Surveillance</h1>
@@ -81,7 +81,7 @@ export default function App() {
           />
           {docBusy && (
             <p className="mt-3 text-sm text-slate-500 flex items-center gap-2">
-              <Activity size={14} className="animate-pulse text-accent" /> Extracting structured records from document text via AI…
+              <Activity size={14} className="animate-pulse text-brand" /> Extracting structured records from document text via AI…
             </p>
           )}
           {docError && (

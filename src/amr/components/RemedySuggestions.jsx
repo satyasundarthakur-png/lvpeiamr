@@ -10,7 +10,7 @@ export default function RemedySuggestions({ remedies }) {
     <ul className="space-y-2">
       {remedies.map((r, i) => (
         <li key={i} className="flex items-start gap-2 text-sm">
-          <Stethoscope size={15} className="text-accent mt-0.5 shrink-0" />
+          <Stethoscope size={15} className="text-brand mt-0.5 shrink-0" />
           <span className="text-slate-700">{r.message}</span>
         </li>
       ))}

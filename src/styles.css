@@ -21,7 +21,7 @@
 @theme inline {
   --color-ink: oklch(0.226 0.045 264.1);
   --color-surface: oklch(0.984 0.003 247.858);
-  --color-accent-teal: oklch(0.58 0.09 183.6);
+  --color-brand: oklch(0.58 0.09 183.6);
   --color-warn: oklch(0.552 0.13 62.5);
   --color-danger: oklch(0.505 0.19 27.3);
   --radius-sm: calc(var(--radius) - 4px);

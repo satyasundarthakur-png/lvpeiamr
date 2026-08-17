@@ -68,10 +68,10 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
           handleFiles(e.dataTransfer.files);
         }}
         className={`border-2 border-dashed rounded-lg p-10 text-center transition-colors ${
-          dragOver ? "border-accent bg-accent/5" : "border-slate-300 bg-white"
+          dragOver ? "border-brand bg-brand/5" : "border-slate-300 bg-white"
         }`}
       >
-        <UploadCloud className="mx-auto mb-3 text-accent" size={36} />
+        <UploadCloud className="mx-auto mb-3 text-brand" size={36} />
         <p className="font-medium text-ink">Drop infection surveillance files here</p>
         <p className="text-sm text-slate-500 mt-1">
           CSV, Excel (.xlsx/.xls), or Word (.docx) clinical notes
@@ -80,7 +80,7 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
           <span className="flex items-center gap-1"><FileSpreadsheet size={14}/> csv / xlsx</span>
           <span className="flex items-center gap-1"><FileText size={14}/> docx</span>
         </div>
-        <label className="inline-block mt-4 px-4 py-2 bg-accent text-white text-sm rounded-md cursor-pointer hover:bg-accent/90 transition-colors">
+        <label className="inline-block mt-4 px-4 py-2 bg-brand text-white text-sm rounded-md cursor-pointer hover:bg-brand/90 transition-colors">
           {busy ? "Processing…" : "Choose files"}
           <input
             type="file"

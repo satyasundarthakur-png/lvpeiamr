@@ -26,7 +26,7 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
     <div className="border border-slate-200 rounded-lg p-5 bg-white">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={18} className="text-accent" />
+          <Sparkles size={18} className="text-brand" />
           <h3 className="font-medium text-ink">AI policy summary</h3>
         </div>
         <button
@@ -48,7 +48,7 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="gsk_..."
-            className="w-full text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent/40"
+            className="w-full text-sm border border-slate-300 rounded px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-brand/40"
           />
           <p className="text-xs text-slate-400 mt-1">
             Stored only in this browser session. For production, move this call server-side (e.g. a Supabase Edge Function) so the key isn't exposed in the client bundle.
@@ -63,7 +63,7 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
       <button
         onClick={handleGenerate}
         disabled={loading || !apiKey || antibiogram.length === 0}
-        className="flex items-center gap-2 px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm rounded-md hover:bg-brand/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
         {loading ? "Analyzing…" : "Generate summary"}
