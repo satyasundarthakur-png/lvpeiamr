@@ -19,11 +19,17 @@
  */
 
 @theme inline {
-  --color-ink: oklch(0.226 0.045 264.1);
-  --color-surface: oklch(0.984 0.003 247.858);
-  --color-brand: oklch(0.58 0.09 183.6);
-  --color-warn: oklch(0.552 0.13 62.5);
-  --color-danger: oklch(0.505 0.19 27.3);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-brand: var(--brand);
+  --color-brand-glow: var(--brand-glow);
+  --color-violet: var(--violet);
+  --color-coral: var(--coral);
+  --color-amber: var(--amber);
+  --color-success: var(--success);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -68,6 +74,36 @@
 
 :root {
   --radius: 0.625rem;
+  --ink: oklch(0.24 0.05 268);
+  --surface: oklch(0.985 0.008 260);
+  --brand: oklch(0.62 0.13 191);
+  --brand-glow: oklch(0.74 0.15 176);
+  --violet: oklch(0.58 0.2 296);
+  --coral: oklch(0.66 0.19 22);
+  --amber: oklch(0.75 0.16 70);
+  --success: oklch(0.63 0.16 155);
+  --warn: oklch(0.66 0.16 62);
+  --danger: oklch(0.57 0.21 22);
+  --info: oklch(0.6 0.16 250);
+  --gradient-brand: linear-gradient(135deg, var(--brand), var(--brand-glow) 55%, var(--violet));
+  --gradient-sunrise: linear-gradient(120deg, var(--violet), var(--coral) 70%, var(--amber));
+  --gradient-mesh: radial-gradient(
+      1000px 500px at 8% -10%,
+      color-mix(in oklab, var(--brand) 26%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 460px at 92% -20%,
+      color-mix(in oklab, var(--violet) 24%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      760px 420px at 60% 110%,
+      color-mix(in oklab, var(--coral) 14%, transparent),
+      transparent 65%
+    );
+  --shadow-soft: 0 1px 2px oklch(0.24 0.05 268 / 0.06), 0 12px 28px -18px oklch(0.24 0.05 268 / 0.22);
+  --shadow-lift: 0 2px 4px oklch(0.24 0.05 268 / 0.06), 0 24px 48px -24px oklch(0.24 0.05 268 / 0.3);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
