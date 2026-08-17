@@ -3,7 +3,7 @@ import { FileDown, Loader2 } from "lucide-react";
 import { exportDocx, exportPdf } from "../lib/exportReport.js";
 
 export default function ExportButtons({ antibiogram, flags, remedies, narrative, meta }) {
-  const [busy, setBusy] = useState(null); // 'docx' | 'pdf' | null
+  const [busy, setBusy] = useState(null);
 
   const handleExport = async (format) => {
     setBusy(format);
@@ -20,22 +20,24 @@ export default function ExportButtons({ antibiogram, flags, remedies, narrative,
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleExport("docx")}
-        disabled={busy !== null}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-40 transition-colors"
-      >
-        {busy === "docx" ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-        Export .docx
-      </button>
-      <button
-        onClick={() => handleExport("pdf")}
-        disabled={busy !== null}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-300 rounded-md hover:bg-slate-50 disabled:opacity-40 transition-colors"
-      >
-        {busy === "pdf" ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
-        Export .pdf
-      </button>
+      {[
+        { id: "docx", label: "Export .docx" },
+        { id: "pdf", label: "Export .pdf" },
+      ].map((btn) => (
+        <button
+          key={btn.id}
+          onClick={() => handleExport(btn.id)}
+          disabled={busy !== null}
+          className="flex items-center gap-1.5 rounded-lg border border-brand/30 bg-brand/8 px-3 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand/16 disabled:opacity-40"
+        >
+          {busy === btn.id ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <FileDown size={14} />
+          )}
+          {btn.label}
+        </button>
+      ))}
     </div>
   );
 }
