@@ -1,0 +1,6 @@
+patient_id,episode_date,infection_site,procedure_type,organism,antimicrobial_given,route,susceptibility_result,outcome
+PT001,2026-03-02,Endophthalmitis,Cataract surgery,Pseudomonas aeruginosa,Moxifloxacin,Topical,R,Treatment failure - reoperation
+PT002,2026-03-05,Surgical site,Cataract surgery,Staphylococcus aureus,Cefazolin,Intravitreal,S,Resolved
+PT003,2026-03-10,Corneal ulcer,None,Fusarium species,Natamycin,Topical,S,Persistent - slow response
+PT004,2026-03-14,Endophthalmitis,Vitrectomy,Klebsiella pneumoniae,Ceftazidime,Intravitreal,R,Treatment failure
+PT005,2026-03-18,Surgical site,Cataract surgery,No growth,Moxifloxacin,Topical,,Resolved
