@@ -38,7 +38,7 @@ export default function FlaggedPatterns({ flags }) {
 
             {isOpen && flag.records && (
               <div className="mt-3 overflow-x-auto">
-                <table className="min-w-full text-xs bg-white rounded border border-slate-200">
+                <table className="min-w-full overflow-hidden rounded-lg border border-ink/10 bg-background text-xs">
                   <thead className="bg-brand/6 text-ink/60 uppercase">
                     <tr>
                       <th className="text-left px-3 py-1.5">Patient</th>
