@@ -185,3 +185,63 @@
       -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
   }
 }
+
+@utility app-canvas {
+  background-color: var(--surface);
+  background-image: var(--gradient-mesh);
+  background-repeat: no-repeat;
+}
+
+@utility surface-card {
+  border: 1px solid color-mix(in oklab, var(--ink) 8%, transparent);
+  border-radius: var(--radius-xl);
+  background: color-mix(in oklab, white 88%, var(--surface));
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+}
+
+@utility gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+@utility gradient-sunrise {
+  background-image: var(--gradient-sunrise);
+}
+
+@utility text-gradient {
+  background-image: var(--gradient-brand);
+  background-clip: text;
+  color: transparent;
+}
+
+@utility btn-brand {
+  background-image: var(--gradient-brand);
+  color: oklch(0.99 0.005 190);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+    filter: saturate(1.1);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    box-shadow: none;
+  }
+}
+
+@utility lift-hover {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+}
