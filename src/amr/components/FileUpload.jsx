@@ -67,20 +67,20 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={`border-2 border-dashed rounded-lg p-10 text-center transition-colors ${
-          dragOver ? "border-brand bg-brand/5" : "border-slate-300 bg-white"
+        className={`rounded-2xl border-2 border-dashed p-10 text-center transition-all duration-300 ${
+          dragOver ? "border-brand bg-brand/8 scale-[1.01]" : "border-ink/15 bg-background/70"
         }`}
       >
         <UploadCloud className="mx-auto mb-3 text-brand" size={36} />
-        <p className="font-medium text-ink">Drop infection surveillance files here</p>
-        <p className="text-sm text-slate-500 mt-1">
+        <p className="font-semibold text-ink">Drop infection surveillance files here</p>
+        <p className="text-sm text-ink/60 mt-1">
           CSV, Excel (.xlsx/.xls), or Word (.docx) clinical notes
         </p>
-        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-slate-400">
+        <div className="flex items-center justify-center gap-4 mt-3 text-xs text-ink/45">
           <span className="flex items-center gap-1"><FileSpreadsheet size={14}/> csv / xlsx</span>
           <span className="flex items-center gap-1"><FileText size={14}/> docx</span>
         </div>
-        <label className="inline-block mt-4 px-4 py-2 bg-brand text-white text-sm rounded-md cursor-pointer hover:bg-brand/90 transition-colors">
+        <label className="inline-block mt-4 px-4 py-2 btn-brand text-sm rounded-xl cursor-pointer">
           {busy ? "Processing…" : "Choose files"}
           <input
             type="file"
@@ -95,15 +95,15 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
 
       {status && (
         <div className={`mt-3 flex items-start gap-2 text-sm rounded-md p-3 ${
-          status.type === "error" ? "bg-red-50 text-danger" : "bg-slate-50 text-slate-700"
+          status.type === "error" ? "border border-danger/20 bg-danger/8 text-danger" : "bg-brand/8 text-ink/80"
         }`}>
           <AlertCircle size={16} className="mt-0.5 shrink-0" />
           <span>{status.message}</span>
         </div>
       )}
 
-      <details className="mt-4 text-xs text-slate-500">
-        <summary className="cursor-pointer hover:text-slate-700">Expected CSV/Excel columns</summary>
+      <details className="mt-4 text-xs text-ink/60">
+        <summary className="cursor-pointer hover:text-ink/80">Expected CSV/Excel columns</summary>
         <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 font-mono">
           <span>patient_id</span>
           <span>episode_date</span>
