@@ -1,6 +1,6 @@
 // Standardized organism reference list, weighted toward ophthalmic pathogens.
 // Each entry: canonical name + common raw-text synonyms seen in EMR/lab exports.
-import { fuzzyBestMatch } from "../lib/fuzzyMatch.js";
+import { fuzzyBestMatch, matchesAsToken } from "../lib/fuzzyMatch.js";
 
 export const ORGANISMS = [
   { code: "PSAER", name: "Pseudomonas aeruginosa", gramType: "Gram-negative", synonyms: ["pseudomonas aeruginosa", "p. aeruginosa", "p aeruginosa", "pseudomonas"], note: "Common cause of severe, rapidly progressive corneal ulcers and post-surgical endophthalmitis; classically associated with contact lens wear." },
@@ -39,7 +39,7 @@ export function standardizeOrganism(rawText) {
   const t = rawText.trim().toLowerCase();
   for (const org of ORGANISMS) {
     if (org.name.toLowerCase() === t) return org;
-    if (org.synonyms.some((s) => t === s || t.includes(s))) return org;
+    if (org.synonyms.some((s) => t === s || matchesAsToken(t, s))) return org;
   }
   // Fallback: catch typos/near-misses (e.g. "psuedomonas") before giving up.
   const fuzzy = fuzzyBestMatch(t, FUZZY_CANDIDATES);

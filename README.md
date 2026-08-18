@@ -34,7 +34,14 @@ all processed in your browser.
    with a fuzzy-matching fallback for typos, so messy spellings and
    abbreviations (`"p aeruginosa"`, `"moxi"`, `"psuedomonas"`) still resolve
    to canonical entries. A recognition audit in the glossary shows exactly
-   what was fuzzy-corrected vs. genuinely unrecognized in your data.
+   what was fuzzy-corrected vs. genuinely unrecognized in your data. Synonym
+   matching uses word-boundary-safe matching (`lib/fuzzyMatch.js`,
+   `matchesAsToken`), not raw substring matching — a prior bug let the short
+   synonym "moxi" (for Moxifloxacin) match inside the unrelated word
+   "**a-moxi-**cillin-clavulanate", silently corrupting those records into
+   fabricated Moxifloxacin entries; the same class of bug also affected
+   Ciprofloxacin/Levofloxacin colliding with Ofloxacin. Fixed and audited
+   across all three taxonomies with an automated collision check.
 4. **Analyze** — an antibiogram is built following **CLSI M39** cumulative-antibiogram
    methodology (the same standard used by WHONET and the R `AMR` package): only the
    first isolate per patient per organism in the dataset counts by default, so a

@@ -63,3 +63,23 @@ export function fuzzyBestMatch(raw, candidates) {
   }
   return best;
 }
+
+// Whether `synonym` appears in `text` as a whole word/phrase, not merely as
+// a raw substring. This exists because naive substring matching
+// (text.includes(synonym)) produces real false positives: the synonym
+// "moxi" (for Moxifloxacin) is a literal substring of "amoxicillin", and
+// "ofloxacin" (for Ofloxacin) is a literal substring of "ciprofloxacin" and
+// "levofloxacin" — both caused real, silent data corruption where one drug
+// was mapped to a completely different drug. Word-boundary matching still
+// correctly catches legitimate cases like "Pseudomonas aeruginosa (ESBL)"
+// containing "pseudomonas aeruginosa" as a bounded phrase, while rejecting
+// matches that only occur mid-word.
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export function matchesAsToken(text, synonym) {
+  if (!text || !synonym) return false;
+  const pattern = new RegExp(`(^|[^a-z0-9])${escapeRegex(synonym)}([^a-z0-9]|$)`, "i");
+  return pattern.test(text);
+}

@@ -1,6 +1,6 @@
 // Standardized antimicrobial reference list, weighted toward ophthalmic use
 // (topical, intravitreal, and systemic agents commonly used for ocular infection).
-import { fuzzyBestMatch } from "../lib/fuzzyMatch.js";
+import { fuzzyBestMatch, matchesAsToken } from "../lib/fuzzyMatch.js";
 
 export const ANTIMICROBIALS = [
   { code: "MFX", name: "Moxifloxacin", class: "Fluoroquinolone", route: "Topical/Systemic", synonyms: ["moxifloxacin", "moxi", "vigamox"] },
@@ -43,7 +43,7 @@ export function standardizeAntimicrobial(rawText) {
   const t = rawText.trim().toLowerCase();
   for (const ab of ANTIMICROBIALS) {
     if (ab.name.toLowerCase() === t) return ab;
-    if (ab.synonyms.some((s) => t === s || t.includes(s))) return ab;
+    if (ab.synonyms.some((s) => t === s || matchesAsToken(t, s))) return ab;
   }
   const fuzzy = fuzzyBestMatch(t, FUZZY_CANDIDATES);
   if (fuzzy) return { ...fuzzy, fuzzyMatched: true };

@@ -3,7 +3,7 @@
 // with no recognition layer at all — this fills that gap so "corneal ulcer",
 // "microbial keratitis", and "keratitis" all resolve to the same canonical
 // entry instead of being treated as three different sites.
-import { fuzzyBestMatch } from "../lib/fuzzyMatch.js";
+import { fuzzyBestMatch, matchesAsToken } from "../lib/fuzzyMatch.js";
 
 export const INFECTION_SITES = [
   {
@@ -93,7 +93,7 @@ export function standardizeInfectionSite(rawText) {
   const t = rawText.trim().toLowerCase();
   for (const site of INFECTION_SITES) {
     if (site.name.toLowerCase() === t) return site;
-    if (site.synonyms.some((s) => t === s || t.includes(s))) return site;
+    if (site.synonyms.some((s) => t === s || matchesAsToken(t, s))) return site;
   }
   const fuzzy = fuzzyBestMatch(t, FUZZY_CANDIDATES);
   if (fuzzy) return { ...fuzzy, fuzzyMatched: true };
