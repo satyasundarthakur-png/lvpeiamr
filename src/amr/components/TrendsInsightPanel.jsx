@@ -3,6 +3,24 @@ import { Globe2, Loader2, ExternalLink, BookOpen, Sparkles, Info } from "lucide-
 import { getRelevantReferences } from "../data/globalSurveillance.js";
 import { generateTrendsInsight } from "../lib/groqClient.js";
 
+function InstitutionBadge({ entry }) {
+  if (entry.isInstitutional) {
+    return (
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-brand bg-brand/15 rounded-full px-1.5 py-0.5">
+        LVPEI
+      </span>
+    );
+  }
+  if (entry.peerInstitution) {
+    return (
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-violet bg-violet/12 rounded-full px-1.5 py-0.5">
+        {entry.peerInstitution}
+      </span>
+    );
+  }
+  return null;
+}
+
 export default function TrendsInsightPanel({ records, antibiogram, flags, meta, apiKey, onInsightChange }) {
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +70,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
           <p className="text-xs font-semibold uppercase tracking-wide text-ink/45 mb-2">Surveillance programs</p>
           <ul className="space-y-2">
             {references.programs.map((p) => (
-              <li key={p.id} className={`text-sm rounded-lg border p-2.5 ${p.isInstitutional ? "border-brand/30 bg-brand/6" : "border-ink/10"}`}>
+              <li key={p.id} className={`text-sm rounded-lg border p-2.5 ${p.isInstitutional ? "border-brand/30 bg-brand/6" : p.peerInstitution ? "border-violet/25 bg-violet/5" : "border-ink/10"}`}>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <a
                     href={p.url}
@@ -62,11 +80,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
                   >
                     {p.name} <ExternalLink size={12} />
                   </a>
-                  {p.isInstitutional && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-brand bg-brand/15 rounded-full px-1.5 py-0.5">
-                      LVPEI
-                    </span>
-                  )}
+                  <InstitutionBadge entry={p} />
                 </div>
                 <p className="text-xs text-ink/50 mt-0.5">{p.scope}</p>
                 <p className="text-xs text-ink/60 mt-1 leading-relaxed">{p.summary}</p>
@@ -91,7 +105,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
           </p>
           <ul className="space-y-2">
             {references.literature.map((l) => (
-              <li key={l.id} className={`text-sm rounded-lg border p-2.5 ${l.isInstitutional ? "border-brand/30 bg-brand/6" : "border-ink/10"}`}>
+              <li key={l.id} className={`text-sm rounded-lg border p-2.5 ${l.isInstitutional ? "border-brand/30 bg-brand/6" : l.peerInstitution ? "border-violet/25 bg-violet/5" : "border-ink/10"}`}>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <a
                     href={l.url}
@@ -101,11 +115,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
                   >
                     {l.title} <ExternalLink size={12} />
                   </a>
-                  {l.isInstitutional && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-brand bg-brand/15 rounded-full px-1.5 py-0.5">
-                      LVPEI
-                    </span>
-                  )}
+                  <InstitutionBadge entry={l} />
                 </div>
                 <p className="text-xs text-ink/60 mt-1 leading-relaxed">{l.note}</p>
               </li>

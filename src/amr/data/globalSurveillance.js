@@ -13,10 +13,16 @@
 // surfaced first wherever relevant, since a comparison against your own
 // institute's historical data is more actionable than a comparison against a
 // US or global cohort with a different patient population and climate.
+// Entries with a peerInstitution field are published work from other major
+// Indian tertiary eye institutes (Aravind Eye Hospital, Sankara Nethralaya,
+// Dr Rajendra Prasad Centre/AIIMS) — not LVPEI's own data, but a genuinely
+// useful second tier of comparison: same country, broadly similar patient
+// population and climate, more directly comparable than international
+// sources even though it isn't your own institute's numbers.
 // headlineStats (where present) are real published figures, not invented —
 // each was verified against the source before inclusion, so the app can
-// actually benchmark your antibiogram numerically against LVPEI's own
-// published rates, not just link to the paper.
+// actually benchmark your antibiogram numerically against published rates,
+// not just link to the paper.
 
 export const SURVEILLANCE_PROGRAMS = [
   {
@@ -109,6 +115,30 @@ export const KEY_LITERATURE = [
     isInstitutional: true,
   },
   {
+    id: "aravind-mrsa-10yr",
+    title: "A ten-year study of prevalence, antimicrobial susceptibility pattern, and genotypic characterization of MRSA causing ocular infections at a tertiary eye care hospital in South India (Nithya et al., Infect Genet Evol 2019)",
+    organismCodes: ["STAAUR"],
+    note: "Aravind Eye Hospital, Madurai, 2007–2017: of 1,306 S. aureus ocular isolates, MRSA prevalence rose from 9% (2007) to 38% (2017). MRSA isolates were 100% sensitive to vancomycin and 91% to chloramphenicol, but mostly resistant to all fluoroquinolones tested; MSSA showed minimal chloramphenicol resistance and no vancomycin resistance, though fluoroquinolone resistance also rose over the study period. A useful South Indian peer-institution comparison for staphylococcal trends.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/30708134/",
+    peerInstitution: "Aravind Eye Hospital",
+  },
+  {
+    id: "sankara-enterobacteriaceae",
+    title: "Characterization of antibiotic resistance profiles of ocular Enterobacteriaceae isolates (Paul-Satyaseela et al., Sankara Nethralaya, Eur J Microbiol Immunol 2016)",
+    organismCodes: ["KLEPNE", "ECOLI", "SERMAR", "ENTCLO", "PROMIR"],
+    note: "L&T Microbiology Research Center, Sankara Nethralaya, Chennai: 101 Enterobacteriaceae isolates recovered from 12,371 prospective ocular samples, with rising ESBL and fluoroquinolone resistance noted among ocular Gram-negative Enterobacteriaceae — the paper specifically recommends fluoroquinolone susceptibility testing before starting empiric therapy given this trend.",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4838984/",
+    peerInstitution: "Sankara Nethralaya",
+  },
+  {
+    id: "aiims-rpc-north-central-india",
+    title: "Antibiotic susceptibility pattern of bacterial isolates from microbial keratitis in North and Central India: a multi-centric study (Ahmed, Titiyal, Sharma et al., Indian J Ophthalmol 2022)",
+    organismCodes: ["STAAUR", "PSAER", "STRPNE"],
+    note: "Multi-centric study including Dr Rajendra Prasad Centre for Ophthalmic Sciences, AIIMS New Delhi, comparing bacterial keratitis susceptibility patterns between North and Central India: notable regional differences, e.g. S. pneumoniae ceftriaxone susceptibility (100% central vs 79% north), S. aureus ofloxacin susceptibility (15% central vs 67% north) — a reminder that even within-India benchmarks can vary meaningfully by region.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/35647966/",
+    peerInstitution: "AIIMS RP Centre",
+  },
+  {
     id: "armor-conjunctival-2018",
     title: "Antibiotic resistance among bacterial conjunctival pathogens (ARMOR, 2009–2016)",
     organismCodes: ["STAAUR", "STACNS", "STRPNE", "PSAER", "HAEINF"],
@@ -141,10 +171,16 @@ export const KEY_LITERATURE = [
 // Returns the surveillance programs and literature relevant to a given set of
 // organism codes present in the user's own antibiogram — used to avoid
 // showing irrelevant references when, say, no fungal organisms are present.
-// Institutional (LVPEI) sources are always sorted first within each list, so
-// the most locally actionable benchmark is what the user sees first.
-function sortInstitutionalFirst(list) {
-  return [...list].sort((a, b) => (b.isInstitutional ? 1 : 0) - (a.isInstitutional ? 1 : 0));
+// Sorted in three tiers: LVPEI's own data first, other major Indian
+// tertiary eye institutes second, broader international sources last.
+function institutionalTier(entry) {
+  if (entry.isInstitutional) return 0;
+  if (entry.peerInstitution) return 1;
+  return 2;
+}
+
+function sortByInstitutionalTier(list) {
+  return [...list].sort((a, b) => institutionalTier(a) - institutionalTier(b));
 }
 
 export function getRelevantReferences(organismCodes = []) {
@@ -163,7 +199,7 @@ export function getRelevantReferences(organismCodes = []) {
   const literatureFinal = literature.length ? literature : KEY_LITERATURE;
 
   return {
-    programs: sortInstitutionalFirst(programsFinal),
-    literature: sortInstitutionalFirst(literatureFinal),
+    programs: sortByInstitutionalTier(programsFinal),
+    literature: sortByInstitutionalTier(literatureFinal),
   };
 }
