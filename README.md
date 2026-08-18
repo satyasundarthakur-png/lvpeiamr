@@ -52,9 +52,17 @@ all processed in your browser.
    comparing your local antibiogram to those published trends. This is a
    curated static reference list plus a general-knowledge AI synthesis — not
    a live database query.
-6. **Report** — export a `.docx` or `.pdf` stewardship report, optionally
+6. **Report** — export a `.docx` or `.pdf` stewardship report with the app's
+   brand styling (colored headings, severity-coded table cells), optionally
    including an AI-generated plain-language summary and policy
-   recommendation grounded strictly in the uploaded data.
+   recommendation grounded strictly in the uploaded data. AI-assisted
+   sections are labeled as such (as "Executive Summary" / "Global Trends"
+   with a small disclosure line) rather than hidden, and a footer note
+   reiterates this — full transparency is kept even though the report can
+   carry your own institute name and logo as a letterhead. AI narrative text
+   (which may contain markdown bold or Unicode punctuation) is parsed and
+   sanitized before rendering so it doesn't corrupt in the PDF's limited font
+   encoding — see `lib/textFormatting.js`.
 7. **Reference** — a standalone Microbiology Reference tool (available even
    without uploaded data) covers organisms, antimicrobials, infection sites,
    and established combination-therapy/synergy regimens used in ophthalmic
