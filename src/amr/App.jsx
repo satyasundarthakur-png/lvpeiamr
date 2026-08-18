@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Activity, Eye, Trash2, ShieldPlus, FlaskConical, Microscope, Sparkles, Globe2, BookMarked } from "lucide-react";
+import { Activity, Eye, Trash2, ShieldPlus, FlaskConical, Microscope, Sparkles, Globe2, BookMarked, CalendarClock } from "lucide-react";
 import FileUpload from "./components/FileUpload.jsx";
 import SummaryStats from "./components/SummaryStats.jsx";
 import AntibiogramTable from "./components/AntibiogramTable.jsx";
@@ -7,6 +7,7 @@ import FlaggedPatterns from "./components/FlaggedPatterns.jsx";
 import RemedySuggestions from "./components/RemedySuggestions.jsx";
 import PolicyNarrative from "./components/PolicyNarrative.jsx";
 import TrendsInsightPanel from "./components/TrendsInsightPanel.jsx";
+import TrendAnalysisPanel from "./components/TrendAnalysisPanel.jsx";
 import MicrobiologyGlossary from "./components/MicrobiologyGlossary.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
@@ -174,6 +175,11 @@ export default function App() {
                 </div>
               </section>
             </div>
+
+            <section>
+              <SectionHeading icon={CalendarClock} title="Trends over time" tone="brand" />
+              <TrendAnalysisPanel records={records} />
+            </section>
 
             <section>
               <SectionHeading icon={Sparkles} title="AI-generated summary" tone="brand" />

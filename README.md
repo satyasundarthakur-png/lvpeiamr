@@ -45,6 +45,16 @@ all processed in your browser.
    (a route-of-administration issue, not necessarily resistance) — these deliberately
    look at every episode, not just first isolates, since a repeat culture showing
    emerging resistance is itself clinically significant.
+5. **Track trends over time** — a separate weekly/monthly/yearly view (`lib/trendAnalysis.js`)
+   tracks how susceptibility for each organism-antimicrobial pair drifts across the
+   periods in your data, with sparkline visualization and automatic "worsening
+   resistance" flagging when susceptibility drops meaningfully between the first and
+   most recent period with adequate sample size. This is phenotypic resistance drift
+   (the same signal ARMOR/GLASS report year over year), not genomic mutation
+   tracking — no sequencing data exists anywhere in this pipeline, and the UI is
+   explicit about that distinction. Trend directions require ≥2 periods with 5+
+   isolates each; smaller samples are honestly marked "insufficient data" rather than
+   implying a false trend.
 5. **Contextualize** — a "Global trends & literature" panel surfaces real,
    named AMR surveillance programs (ARMOR, WHO GLASS, EARS-Net, ICMR AMR
    Network) and landmark ocular-microbiology literature relevant to whichever
