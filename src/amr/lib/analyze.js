@@ -58,9 +58,10 @@ export function standardizeDataset(rows) {
 }
 
 // Build an antibiogram: organism x antimicrobial -> % susceptible
-export function buildAntibiogram(records) {
+export function buildAntibiogram(records, { firstIsolateOnly = true } = {}) {
+  const source = firstIsolateOnly ? getFirstIsolatePerPatient(records) : records;
   const grid = {};
-  records.forEach((r) => {
+  source.forEach((r) => {
     if (r.rsi === "Unknown" || r.organism_code === "NOGROW") return;
     const key = r.organism_standardized;
     if (!grid[key]) grid[key] = {};
@@ -83,6 +84,49 @@ export function buildAntibiogram(records) {
     });
   });
   return table.sort((a, b) => a.organism.localeCompare(b.organism));
+}
+
+// CLSI M39 ("Analysis and Presentation of Cumulative Antimicrobial
+// Susceptibility Test Data") recommends including only the FIRST isolate of
+// a given species per patient in the analysis period, irrespective of body
+// site or susceptibility result — otherwise a single patient with repeated
+// cultures (e.g. a non-resolving infection re-cultured multiple times) can
+// skew the whole cumulative antibiogram toward that patient's resistance
+// pattern. This mirrors the same rule used by WHONET and the R `AMR`
+// package's `first_isolate()`. Records missing patient_id or organism_code
+// can't be deduplicated meaningfully and pass through unchanged.
+export function getFirstIsolatePerPatient(records) {
+  const groups = new Map();
+  const passthrough = [];
+
+  records.forEach((r) => {
+    if (!r.patient_id || !r.organism_code || r.organism_code === "NOGROW") {
+      passthrough.push(r);
+      return;
+    }
+    const key = `${r.patient_id}::${r.organism_code}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  });
+
+  const firstIsolates = [];
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      firstIsolates.push(group[0]);
+      continue;
+    }
+    const sorted = [...group].sort((a, b) => {
+      const da = Date.parse(a.episode_date);
+      const db = Date.parse(b.episode_date);
+      if (Number.isNaN(da) && Number.isNaN(db)) return 0;
+      if (Number.isNaN(da)) return 1; // undated records sort after dated ones
+      if (Number.isNaN(db)) return -1;
+      return da - db;
+    });
+    firstIsolates.push(sorted[0]);
+  }
+
+  return [...passthrough, ...firstIsolates];
 }
 
 // Flag patterns worth surfacing to an infection-control / stewardship reviewer.

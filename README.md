@@ -32,11 +32,16 @@ all processed in your browser.
    reference taxonomy weighted toward ophthalmic pathogens (`data/organisms.js`,
    `data/antimicrobials.js`), so messy spellings and abbreviations
    (`"p aeruginosa"`, `"moxi"`) resolve to canonical entries.
-4. **Analyze** — an antibiogram is built (organism × antimicrobial ×
-   %susceptible/%resistant), and rule-based flags surface patterns like
-   discordant empiric therapy, high-resistance drug/organism pairs, and
-   topical-only therapy for endophthalmitis (a route-of-administration issue,
-   not necessarily resistance).
+4. **Analyze** — an antibiogram is built following **CLSI M39** cumulative-antibiogram
+   methodology (the same standard used by WHONET and the R `AMR` package): only the
+   first isolate per patient per organism in the dataset counts by default, so a
+   single re-cultured patient can't skew the facility-wide resistance rate. A toggle
+   lets you compare against the naive "all isolates" count to see the difference.
+   Rule-based flags separately surface patterns like discordant empiric therapy,
+   high-resistance drug/organism pairs, and topical-only therapy for endophthalmitis
+   (a route-of-administration issue, not necessarily resistance) — these deliberately
+   look at every episode, not just first isolates, since a repeat culture showing
+   emerging resistance is itself clinically significant.
 5. **Contextualize** — a "Global trends & literature" panel surfaces real,
    named AMR surveillance programs (ARMOR, WHO GLASS, EARS-Net, ICMR AMR
    Network) and landmark ocular-microbiology literature relevant to whichever

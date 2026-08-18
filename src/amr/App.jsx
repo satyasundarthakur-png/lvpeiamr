@@ -162,7 +162,7 @@ export default function App() {
             <div className="grid gap-8 md:grid-cols-2">
               <section>
                 <SectionHeading icon={Microscope} title="Antibiogram" tone="violet" />
-                <AntibiogramTable antibiogram={antibiogram} />
+                <AntibiogramTable records={records} antibiogram={antibiogram} />
               </section>
 
               <section>

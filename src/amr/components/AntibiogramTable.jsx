@@ -1,12 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
+import { Info } from "lucide-react";
+import { buildAntibiogram } from "../lib/analyze.js";
 
-export default function AntibiogramTable({ antibiogram }) {
+export default function AntibiogramTable({ records = [], antibiogram: precomputed }) {
+  const [firstIsolateOnly, setFirstIsolateOnly] = useState(true);
+
+  const antibiogram = records.length > 0 ? buildAntibiogram(records, { firstIsolateOnly }) : precomputed || [];
+
   if (!antibiogram || antibiogram.length === 0) {
     return <p className="text-sm text-ink/60">No susceptibility data available yet.</p>;
   }
 
   return (
     <div className="overflow-x-auto surface-card">
+      {records.length > 0 && (
+        <div className="flex items-start gap-2 px-4 pt-3 pb-1 text-xs text-ink/55">
+          <Info size={14} className="text-brand mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={firstIsolateOnly}
+                onChange={(e) => setFirstIsolateOnly(e.target.checked)}
+                className="accent-brand"
+              />
+              <span>
+                <span className="font-medium text-ink/70">First isolate per patient</span> (CLSI M39 method — recommended)
+              </span>
+            </label>
+            <p className="mt-1 leading-relaxed">
+              {firstIsolateOnly
+                ? "Only the first culture per patient per organism in this dataset counts toward the antibiogram, so a single re-cultured patient can't skew the resistance rate. This matches WHONET/CLSI M39 cumulative antibiogram methodology."
+                : "Showing every isolate, including repeat cultures from the same patient. Uncheck this comparison to see how duplicate isolates can distort susceptibility percentages."}
+            </p>
+          </div>
+        </div>
+      )}
       <table className="min-w-full text-sm">
         <thead className="bg-brand/6 text-ink/70 uppercase text-xs tracking-wide">
           <tr>
@@ -33,7 +62,10 @@ export default function AntibiogramTable({ antibiogram }) {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-ink/45 px-4 py-2">* n &lt; 10 — interpret as preliminary, not statistically robust.</p>
+      <p className="text-xs text-ink/45 px-4 py-2">
+        * n &lt; 10 — interpret as preliminary, not statistically robust. CLSI M39 additionally recommends at least
+        30 isolates before treating a rate as a stable facility-wide estimate.
+      </p>
     </div>
   );
 }
