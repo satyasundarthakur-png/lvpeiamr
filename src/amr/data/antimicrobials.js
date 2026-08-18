@@ -1,5 +1,7 @@
 // Standardized antimicrobial reference list, weighted toward ophthalmic use
 // (topical, intravitreal, and systemic agents commonly used for ocular infection).
+import { fuzzyBestMatch } from "../lib/fuzzyMatch.js";
+
 export const ANTIMICROBIALS = [
   { code: "MFX", name: "Moxifloxacin", class: "Fluoroquinolone", route: "Topical/Systemic", synonyms: ["moxifloxacin", "moxi", "vigamox"] },
   { code: "GAT", name: "Gatifloxacin", class: "Fluoroquinolone", route: "Topical", synonyms: ["gatifloxacin", "gati"] },
@@ -26,6 +28,16 @@ export const ANTIMICROBIALS = [
   { code: "OTHER", name: "Other/unspecified antimicrobial", class: "Other", route: "Unknown", synonyms: [] },
 ];
 
+function buildCandidates() {
+  const candidates = [];
+  for (const ab of ANTIMICROBIALS) {
+    candidates.push({ value: ab.name.toLowerCase(), ref: ab });
+    for (const s of ab.synonyms) candidates.push({ value: s, ref: ab });
+  }
+  return candidates;
+}
+const FUZZY_CANDIDATES = buildCandidates();
+
 export function standardizeAntimicrobial(rawText) {
   if (!rawText) return ANTIMICROBIALS.find((a) => a.code === "OTHER");
   const t = rawText.trim().toLowerCase();
@@ -33,5 +45,7 @@ export function standardizeAntimicrobial(rawText) {
     if (ab.name.toLowerCase() === t) return ab;
     if (ab.synonyms.some((s) => t === s || t.includes(s))) return ab;
   }
+  const fuzzy = fuzzyBestMatch(t, FUZZY_CANDIDATES);
+  if (fuzzy) return { ...fuzzy, fuzzyMatched: true };
   return { code: "UNMAPPED", name: rawText.trim(), class: "Unknown", route: "Unknown", synonyms: [] };
 }

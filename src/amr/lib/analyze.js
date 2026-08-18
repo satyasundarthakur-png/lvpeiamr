@@ -1,5 +1,6 @@
 import { standardizeOrganism } from "../data/organisms.js";
 import { standardizeAntimicrobial } from "../data/antimicrobials.js";
+import { standardizeInfectionSite } from "../data/infectionSites.js";
 
 const RESISTANT_TOKENS = ["r", "resistant", "res"];
 const SUSCEPTIBLE_TOKENS = ["s", "susceptible", "sensitive", "sens"];
@@ -18,6 +19,7 @@ function classifyRSI(raw) {
 export function standardizeRecord(row) {
   const organism = standardizeOrganism(row.organism);
   const antimicrobial = standardizeAntimicrobial(row.antimicrobial_given);
+  const site = standardizeInfectionSite(row.infection_site);
   const rsi = classifyRSI(row.susceptibility_result);
 
   let concordance = "Unclassified";
@@ -38,8 +40,14 @@ export function standardizeRecord(row) {
     organism_standardized: organism.name,
     organism_code: organism.code,
     gram_type: organism.gramType,
+    organism_fuzzy_matched: !!organism.fuzzyMatched,
     antimicrobial_standardized: antimicrobial.name,
     antimicrobial_class: antimicrobial.class,
+    antimicrobial_fuzzy_matched: !!antimicrobial.fuzzyMatched,
+    site_standardized: site.name,
+    site_code: site.code,
+    site_category: site.category,
+    site_fuzzy_matched: !!site.fuzzyMatched,
     rsi,
     concordance,
   };
@@ -185,4 +193,48 @@ export function suggestRemedies(records) {
   });
 
   return suggestions;
+}
+
+// Recognition audit: surfaces which raw uploaded terms (organism,
+// antimicrobial, infection site) were NOT recognized outright and either
+// needed fuzzy matching (likely typo, worth a quick glance) or fell through
+// entirely to UNMAPPED (genuinely unrecognized — worth adding as a synonym
+// or fixing at the source). Helps an ophthalmologist trust — or correct —
+// what the standardization step actually did to their data.
+export function getRecognitionAudit(records) {
+  const fuzzyMatches = [];
+  const unmapped = [];
+
+  records.forEach((r) => {
+    if (r.organism_fuzzy_matched) {
+      fuzzyMatches.push({ field: "organism", raw: r.organism, resolvedTo: r.organism_standardized });
+    } else if (r.organism_code === "UNMAPPED") {
+      unmapped.push({ field: "organism", raw: r.organism });
+    }
+
+    if (r.antimicrobial_fuzzy_matched) {
+      fuzzyMatches.push({ field: "antimicrobial", raw: r.antimicrobial_given, resolvedTo: r.antimicrobial_standardized });
+    } else if (r.antimicrobial_class === "Unknown") {
+      unmapped.push({ field: "antimicrobial", raw: r.antimicrobial_given });
+    }
+
+    if (r.site_fuzzy_matched) {
+      fuzzyMatches.push({ field: "infection_site", raw: r.infection_site, resolvedTo: r.site_standardized });
+    } else if (r.site_code === "UNMAPPED") {
+      unmapped.push({ field: "infection_site", raw: r.infection_site });
+    }
+  });
+
+  // De-duplicate by field+raw so repeated occurrences show once.
+  const dedupe = (list) => {
+    const seen = new Set();
+    return list.filter((item) => {
+      const key = `${item.field}::${(item.raw || "").toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  return { fuzzyMatches: dedupe(fuzzyMatches), unmapped: dedupe(unmapped) };
 }
