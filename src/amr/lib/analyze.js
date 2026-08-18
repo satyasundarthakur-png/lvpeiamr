@@ -27,12 +27,24 @@ export function standardizeRecord(row) {
     concordance = "No organism isolated";
   } else if (rsi === "R") {
     concordance = "Discordant (resistant to therapy given)";
-  } else if (rsi === "S" || rsi === "I") {
+  } else if (rsi === "S") {
     const outcome = String(row.outcome || "").toLowerCase();
     const failed = /fail|reoperat|readmit|worsen|no improvement|persist/.test(outcome);
     concordance = failed
       ? "Concordant but clinical failure (non-microbiological cause likely)"
       : "Concordant, resolved";
+  } else if (rsi === "I") {
+    // Intermediate is deliberately NOT folded into "susceptible" — clinically
+    // it means the drug may still work at a higher dose or with better local
+    // penetration, not that the isolate is fully susceptible. Conflating S
+    // and I under one "susceptible" bucket overstates confidence and (as
+    // found in review) inflates "clinical failure despite susceptible
+    // organism" counts with cases that were never really susceptible.
+    const outcome = String(row.outcome || "").toLowerCase();
+    const failed = /fail|reoperat|readmit|worsen|no improvement|persist/.test(outcome);
+    concordance = failed
+      ? "Intermediate susceptibility, clinical failure (consider dose/route optimization)"
+      : "Intermediate susceptibility, resolved";
   }
 
   return {
@@ -104,8 +116,21 @@ export function buildAntibiogram(records, { firstIsolateOnly = true, organismGro
         organismVariants: variants,
         antimicrobial,
         n: counts.total,
+        resistantCount: counts.R,
+        susceptibleCount: counts.S,
+        intermediateCount: counts.I,
+        // Rounded values for display. Threshold logic (e.g. "≥30% resistant")
+        // must use pctResistantExact, not this rounded figure — otherwise a
+        // pair at 29.6% resistance rounds to "30%" on screen and incorrectly
+        // trips a >=30% threshold check that should only fire on the real
+        // underlying rate. Found via third-party review on a 5,000-record
+        // dataset: 4 pairs in the 29.6-29.9% range were being counted as
+        // "≥30% resistant" (53 instead of the correct 49) purely because
+        // rounding happened before the threshold comparison instead of after.
         pctSusceptible: Math.round(((counts.S) / counts.total) * 100),
         pctResistant: Math.round(((counts.R) / counts.total) * 100),
+        pctSusceptibleExact: (counts.S / counts.total) * 100,
+        pctResistantExact: (counts.R / counts.total) * 100,
       });
     });
   });
@@ -170,7 +195,11 @@ export function flagPatterns(records) {
     });
   }
 
-  // 2. Concordant but clinically failed (non-microbiological failure)
+  // 2. Concordant but clinically failed (non-microbiological failure) —
+  // Sensitive-only, per the flag's own title ("...despite susceptible
+  // organism"). Intermediate is tracked as its own, separately-worded flag
+  // below, since folding it into "susceptible" overstates what the lab
+  // result actually showed.
   const concordantFail = records.filter((r) => r.concordance.startsWith("Concordant but"));
   if (concordantFail.length > 0) {
     flags.push({
@@ -181,9 +210,27 @@ export function flagPatterns(records) {
     });
   }
 
-  // 3. Rising resistance per organism-drug pair (needs >= 5 tested to be meaningful)
+  // 2b. Intermediate susceptibility with clinical failure — a distinct,
+  // less severe signal than true resistance, but also not the same claim as
+  // "susceptible organism, unexplained failure". At intermediate MIC, higher
+  // dosing or better local penetration may still salvage the drug choice.
+  const intermediateFail = records.filter((r) => r.concordance.startsWith("Intermediate susceptibility, clinical failure"));
+  if (intermediateFail.length > 0) {
+    flags.push({
+      severity: "medium",
+      title: `${intermediateFail.length} case(s) of clinical failure with intermediate susceptibility`,
+      detail: "Organism showed intermediate (not fully susceptible) results, and outcome indicates failure — consider whether a higher dose, more frequent dosing, or a route with better local penetration could still salvage this drug choice before switching classes.",
+      records: intermediateFail,
+    });
+  }
+
+  // 3. Rising resistance per organism-drug pair (needs >= 5 tested to be
+  // meaningful). Uses the EXACT (unrounded) resistance rate for the
+  // threshold check — comparing against the rounded display value would
+  // incorrectly flag pairs just under 30% that only round up to 30% on
+  // screen (e.g. 29.63% displaying as "30%").
   const antibiogram = buildAntibiogram(records);
-  const highResistance = antibiogram.filter((a) => a.n >= 5 && a.pctResistant >= 30);
+  const highResistance = antibiogram.filter((a) => a.n >= 5 && a.pctResistantExact >= 30);
   if (highResistance.length > 0) {
     flags.push({
       severity: "high",
@@ -241,23 +288,34 @@ export function suggestRemedies(records) {
   });
 
   Object.entries(byOrganism).forEach(([organism, rows]) => {
-    const bestCoverage = rows
+    const highestObserved = rows
       .filter((r) => r.n >= 3)
-      .sort((a, b) => b.pctSusceptible - a.pctSusceptible)[0];
+      .sort((a, b) => b.pctSusceptibleExact - a.pctSusceptibleExact)[0];
+    // Uses the exact (unrounded) resistance rate for the threshold, same fix
+    // as the flagPatterns high-resistance check — a pair at 29.6% should not
+    // trip a ">=30%" alert just because its rounded display value is 30%.
     const worst = rows
-      .filter((r) => r.n >= 3 && r.pctResistant >= 30)
-      .sort((a, b) => b.pctResistant - a.pctResistant);
+      .filter((r) => r.n >= 3 && r.pctResistantExact >= 30)
+      .sort((a, b) => b.pctResistantExact - a.pctResistantExact);
 
-    if (bestCoverage) {
+    if (highestObserved) {
+      // Deliberately NOT phrased as "best empiric coverage" — this is a
+      // ranking of tested agents by observed susceptibility in this dataset,
+      // not a clinical recommendation. That distinction matters: the drug
+      // with the highest number here might have a small n, might not be an
+      // appropriate first-line agent for the site/organism, or might simply
+      // be the least-bad option among a handful tested. Phrasing it as
+      // "best" implies a level of clinical endorsement the underlying
+      // ranking doesn't support.
       suggestions.push({
         organism,
-        message: `Best current empiric coverage for ${organism}: ${bestCoverage.antimicrobial} (${bestCoverage.pctSusceptible}% susceptible, n=${bestCoverage.n}).`,
+        message: `Highest observed susceptibility for ${organism}: ${highestObserved.antimicrobial} (${highestObserved.pctSusceptible}% susceptible, n=${highestObserved.n}) — a data ranking, not a prescribing recommendation.`,
       });
     }
     worst.forEach((w) => {
       suggestions.push({
         organism,
-        message: `Reconsider ${w.antimicrobial} as empiric choice for ${organism} — ${w.pctResistant}% resistance observed (n=${w.n}).`,
+        message: `Resistance alert — ${w.antimicrobial} for ${organism}: ${w.pctResistant}% resistance observed (n=${w.n}).`,
       });
     });
   });

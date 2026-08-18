@@ -101,29 +101,74 @@ async function callChatCompletion({ provider, apiKey, model, systemPrompt, userP
   return callGroq({ apiKey, model: resolvedModel, systemPrompt, userPrompt, maxTokens, temperature });
 }
 
+// Bounds how much raw data gets embedded in a prompt, regardless of dataset
+// size. This matters for two reasons: (1) asking a model to exhaustively
+// narrate every row of a 90+ entry antibiogram will never fit in any
+// reasonable output budget, no matter how high maxTokens is set — output
+// truncation scales with how much the model is asked to cover, not just the
+// budget given; (2) a large unbounded prompt burns through provider rate
+// limits fast (e.g. Groq's free-tier 8000 TPM is a combined input+output
+// budget). Rather than send everything and hope, the most clinically
+// significant rows are prioritized (highest resistance first, tie-broken by
+// largest sample size) and the rest are summarized as a count.
+function summarizeAntibiogramForPrompt(antibiogram, maxRows = 20) {
+  if (antibiogram.length <= maxRows) {
+    return { rows: antibiogram, omittedCount: 0, totalRows: antibiogram.length };
+  }
+  const sorted = [...antibiogram].sort((a, b) => b.pctResistant - a.pctResistant || b.n - a.n);
+  return {
+    rows: sorted.slice(0, maxRows),
+    omittedCount: sorted.length - maxRows,
+    totalRows: sorted.length,
+  };
+}
+
+function summarizeFlagsForPrompt(flags, maxFlags = 10) {
+  if (flags.length <= maxFlags) {
+    return { flags, omittedCount: 0, totalFlags: flags.length };
+  }
+  const severityRank = { high: 0, medium: 1, low: 2 };
+  const sorted = [...flags].sort((a, b) => (severityRank[a.severity] ?? 3) - (severityRank[b.severity] ?? 3));
+  return {
+    flags: sorted.slice(0, maxFlags),
+    omittedCount: sorted.length - maxFlags,
+    totalFlags: sorted.length,
+  };
+}
+
 function buildPolicyPrompt({ antibiogram, flags, remedies, meta }) {
+  const abSummary = summarizeAntibiogramForPrompt(antibiogram, 20);
+  const flagSummary = summarizeFlagsForPrompt(flags, 10);
+  const scaleNote =
+    abSummary.omittedCount > 0 || flagSummary.omittedCount > 0
+      ? `\nNOTE: This dataset is large. You are shown the ${abSummary.rows.length} highest-resistance organism-antimicrobial pairs (of ${abSummary.totalRows} total) and the ${flagSummary.flags.length} highest-severity flags (of ${flagSummary.totalFlags} total) — do not claim the omitted pairs/flags don't exist or are lower-risk; instead, synthesize the OVERARCHING pattern(s) across the full dataset rather than trying to individually list every row. Refer to totals (e.g. "${flagSummary.totalFlags} flagged patterns across the dataset") rather than only the ones shown to you.\n`
+      : "";
+
   return `You are an antimicrobial stewardship analyst reviewing ophthalmology infection surveillance data.
 
 Facility context: ${meta?.facility || "Not specified"}
 Records analyzed: ${meta?.recordCount ?? "unknown"}
 Date range: ${meta?.dateRange || "not specified"}
+${scaleNote}
+ANTIBIOGRAM DATA (organism, antimicrobial, n tested, % susceptible, % resistant)${abSummary.omittedCount > 0 ? ` — top ${abSummary.rows.length} of ${abSummary.totalRows} pairs by resistance` : ""}:
+${JSON.stringify(abSummary.rows, null, 2)}
+${abSummary.omittedCount > 0 ? `\n(${abSummary.omittedCount} additional, generally lower-resistance organism-antimicrobial pairs not shown)\n` : ""}
 
-ANTIBIOGRAM DATA (organism, antimicrobial, n tested, % susceptible, % resistant):
-${JSON.stringify(antibiogram, null, 2)}
+FLAGGED PATTERNS${flagSummary.omittedCount > 0 ? ` — top ${flagSummary.flags.length} of ${flagSummary.totalFlags} by severity` : ""}:
+${JSON.stringify(flagSummary.flags.map((f) => ({ title: f.title, detail: f.detail, severity: f.severity, count: f.records?.length })), null, 2)}
+${flagSummary.omittedCount > 0 ? `\n(${flagSummary.omittedCount} additional flagged patterns not shown)\n` : ""}
 
-FLAGGED PATTERNS:
-${JSON.stringify(flags.map((f) => ({ title: f.title, detail: f.detail, severity: f.severity, count: f.records?.length })), null, 2)}
-
-RULE-BASED REMEDY SUGGESTIONS:
-${JSON.stringify(remedies, null, 2)}
+RULE-BASED REMEDY SUGGESTIONS (top entries; treat as representative, not exhaustive, for large datasets):
+${JSON.stringify(remedies.slice(0, 15), null, 2)}
+${remedies.length > 15 ? `\n(${remedies.length - 15} additional remedy suggestions not shown)\n` : ""}
 
 Write a concise antibiotic policy surveillance summary for an infection control / pharmacy stewardship committee. Include:
-1. A 2-3 sentence executive summary of the key resistance/discordance findings.
-2. The most urgent pattern(s) requiring action, with brief reasoning.
+1. A 2-3 sentence executive summary of the key resistance/discordance findings — reference the TOTAL scale of the dataset (e.g. total flagged cases), not just what's shown to you.
+2. The most urgent pattern(s) requiring action, with brief reasoning. For a large dataset, group by THEME (e.g. "multiple Gram-negative organisms showed >=30% resistance to commonly used fluoroquinolones") rather than listing every individual organism-drug pair.
 3. Specific, actionable empiric antibiotic policy recommendations for ophthalmic infections (prophylaxis and treatment), grounded strictly in the data provided — do not invent statistics not present in the input.
 4. Caveats about sample size where n is small (below 10) — flag these as preliminary, not definitive.
 
-Keep it under 350 words, plain language suitable for a hospital committee, no markdown headers with #, use short paragraphs and a bullet list for recommendations.`;
+Keep it under 350 words, plain language suitable for a hospital committee, no markdown headers with #, use short paragraphs and a bullet list for recommendations. Prioritize covering the full scope of the findings over enumerating every row of data.`;
 }
 
 export async function generatePolicyNarrative({ provider = "groq", apiKey, model, antibiogram, flags, remedies, meta }) {
@@ -151,20 +196,28 @@ function buildTrendsPrompt({ antibiogram, flags, organismCodes, references, meta
   const hasInstitutionalData = institutionalPrograms.length > 0 || institutionalLiterature.length > 0;
   const hasPeerData = references.programs.some((p) => p.peerInstitution) || references.literature.some((l) => l.peerInstitution);
 
+  const abSummary = summarizeAntibiogramForPrompt(antibiogram, 20);
+  const flagSummary = summarizeFlagsForPrompt(flags, 10);
+  const scaleNote =
+    abSummary.omittedCount > 0 || flagSummary.omittedCount > 0
+      ? `\nNOTE: This dataset is large. You are shown the ${abSummary.rows.length} highest-resistance organism-antimicrobial pairs (of ${abSummary.totalRows} total) and the ${flagSummary.flags.length} highest-severity flags (of ${flagSummary.totalFlags} total) — synthesize overarching patterns rather than trying to individually cover every row, and refer to totals where relevant.\n`
+      : "";
+
   return `You are an ocular-infection AMR (antimicrobial resistance) research analyst. You are given:
 1) A local antibiogram from an ophthalmology unit.
 2) A curated list of REAL, named surveillance programs and literature relevant to the organisms present (use ONLY these as your source references — do not invent other studies, statistics, or citations).
 ${hasInstitutionalData ? "3) Some references are the facility's OWN institute's previously published research (marked isInstitutional) — prioritize comparing the local data against these institutional benchmarks FIRST, since they reflect the same patient population, climate, and referral base." : ""}
 ${hasPeerData ? "4) Some references are published work from other major Indian tertiary eye institutes (marked with a peerInstitution name, e.g. Aravind Eye Hospital, Sankara Nethralaya, AIIMS RP Centre) — a useful SECOND tier of comparison after the facility's own data: same country, broadly similar patient population, but not the facility's own numbers. Note that regional variation within India can still be meaningful (e.g. published North vs Central India differences)." : ""}
-
+${scaleNote}
 Facility context: ${meta?.facility || "Not specified"}
 Records analyzed: ${meta?.recordCount ?? "unknown"}
 
-LOCAL ANTIBIOGRAM (organism, antimicrobial, n tested, % susceptible, % resistant):
-${JSON.stringify(antibiogram, null, 2)}
+LOCAL ANTIBIOGRAM (organism, antimicrobial, n tested, % susceptible, % resistant)${abSummary.omittedCount > 0 ? ` — top ${abSummary.rows.length} of ${abSummary.totalRows} pairs by resistance` : ""}:
+${JSON.stringify(abSummary.rows, null, 2)}
+${abSummary.omittedCount > 0 ? `\n(${abSummary.omittedCount} additional, generally lower-resistance organism-antimicrobial pairs not shown)\n` : ""}
 
-LOCAL FLAGGED PATTERNS:
-${JSON.stringify(flags.map((f) => ({ title: f.title, detail: f.detail, severity: f.severity })), null, 2)}
+LOCAL FLAGGED PATTERNS${flagSummary.omittedCount > 0 ? ` — top ${flagSummary.flags.length} of ${flagSummary.totalFlags} by severity` : ""}:
+${JSON.stringify(flagSummary.flags.map((f) => ({ title: f.title, detail: f.detail, severity: f.severity })), null, 2)}
 
 ORGANISMS PRESENT IN THIS DATA: ${organismCodes.join(", ") || "none"}
 

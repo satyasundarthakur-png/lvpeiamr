@@ -51,7 +51,14 @@ all processed in your browser.
    high-resistance drug/organism pairs, and topical-only therapy for endophthalmitis
    (a route-of-administration issue, not necessarily resistance) — these deliberately
    look at every episode, not just first isolates, since a repeat culture showing
-   emerging resistance is itself clinically significant.
+   emerging resistance is itself clinically significant. Threshold checks (e.g.
+   "≥30% resistant") compare against the exact underlying rate, not the rounded
+   display percentage — a pair at 29.6% resistance won't trip a ≥30% flag just
+   because it *displays* as "30%". "Clinical failure" is tracked separately for
+   truly Sensitive isolates versus Intermediate ones, since intermediate
+   susceptibility isn't the same clinical claim as fully susceptible. Rule-based
+   remedy suggestions are phrased as data rankings ("highest observed
+   susceptibility"), not as prescribing recommendations.
 5. **Track trends over time** — a separate weekly/monthly/yearly view (`lib/trendAnalysis.js`)
    tracks how susceptibility for each organism-antimicrobial pair drifts across the
    periods in your data, with sparkline visualization and automatic "worsening
