@@ -43,7 +43,7 @@ function fmtDate() {
 
 // ---------------------- DOCX ----------------------
 
-export async function exportDocx({ antibiogram, flags, remedies, narrative, meta }) {
+export async function exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, meta }) {
   const children = [];
 
   children.push(
@@ -69,6 +69,19 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, meta
     children.push(
       new Paragraph({ heading: HeadingLevel.HEADING_1, text: "AI-Generated Summary" }),
       ...narrative.split("\n").filter(Boolean).map(
+        (line) => new Paragraph({ children: [new TextRun({ text: line, size: 20 })], spacing: { after: 120 } })
+      )
+    );
+  }
+
+  if (trendsInsight) {
+    children.push(
+      new Paragraph({ heading: HeadingLevel.HEADING_1, text: "Global Trends & Literature Context", spacing: { before: 300 } }),
+      new Paragraph({
+        children: [new TextRun({ text: "AI-generated synthesis, not a live database query — verify against primary sources.", italics: true, color: "64748B", size: 18 })],
+        spacing: { after: 150 },
+      }),
+      ...trendsInsight.split("\n").filter(Boolean).map(
         (line) => new Paragraph({ children: [new TextRun({ text: line, size: 20 })], spacing: { after: 120 } })
       )
     );
@@ -134,7 +147,7 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, meta
 
 // ---------------------- PDF ----------------------
 
-export function exportPdf({ antibiogram, flags, remedies, narrative, meta }) {
+export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, meta }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const marginX = 40;
   let y = 50;
@@ -160,6 +173,35 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, meta }) {
     doc.setFont(undefined, "normal");
     const lines = doc.splitTextToSize(narrative, 515);
     lines.forEach((line) => {
+      if (y > 780) {
+        doc.addPage();
+        y = 50;
+      }
+      doc.text(line, marginX, y);
+      y += 13;
+    });
+    y += 15;
+  }
+
+  if (trendsInsight) {
+    if (y > 700) {
+      doc.addPage();
+      y = 50;
+    }
+    doc.setFontSize(13);
+    doc.setFont(undefined, "bold");
+    doc.text("Global Trends & Literature Context", marginX, y);
+    y += 14;
+    doc.setFontSize(9);
+    doc.setFont(undefined, "italic");
+    doc.setTextColor(100);
+    doc.text("AI-generated synthesis, not a live database query — verify against primary sources.", marginX, y);
+    doc.setTextColor(0);
+    y += 14;
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    const trendLines = doc.splitTextToSize(trendsInsight, 515);
+    trendLines.forEach((line) => {
       if (y > 780) {
         doc.addPage();
         y = 50;

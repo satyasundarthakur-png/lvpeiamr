@@ -39,6 +39,7 @@ export default function App() {
   const [docBusy, setDocBusy] = useState(false);
   const [docError, setDocError] = useState(null);
   const [narrative, setNarrative] = useState("");
+  const [trendsInsight, setTrendsInsight] = useState("");
 
   const records = useMemo(() => standardizeDataset(rawRows), [rawRows]);
   const antibiogram = useMemo(() => buildAntibiogram(records), [records]);
@@ -148,6 +149,7 @@ export default function App() {
                   flags={flags}
                   remedies={remedies}
                   narrative={narrative}
+                  trendsInsight={trendsInsight}
                   meta={{ recordCount: records.length }}
                 />
               </SectionHeading>
@@ -194,6 +196,7 @@ export default function App() {
                 flags={flags}
                 meta={{ recordCount: records.length }}
                 apiKey={apiKey}
+                onInsightChange={setTrendsInsight}
               />
             </section>
           </>

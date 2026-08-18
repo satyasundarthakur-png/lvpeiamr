@@ -2,16 +2,16 @@ import React, { useState } from "react";
 import { FileDown, Loader2 } from "lucide-react";
 import { exportDocx, exportPdf } from "../lib/exportReport.js";
 
-export default function ExportButtons({ antibiogram, flags, remedies, narrative, meta }) {
+export default function ExportButtons({ antibiogram, flags, remedies, narrative, trendsInsight, meta }) {
   const [busy, setBusy] = useState(null);
 
   const handleExport = async (format) => {
     setBusy(format);
     try {
       if (format === "docx") {
-        await exportDocx({ antibiogram, flags, remedies, narrative, meta });
+        await exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, meta });
       } else {
-        exportPdf({ antibiogram, flags, remedies, narrative, meta });
+        exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, meta });
       }
     } finally {
       setBusy(null);

@@ -3,7 +3,7 @@ import { Globe2, Loader2, ExternalLink, BookOpen, Sparkles, Info } from "lucide-
 import { getRelevantReferences } from "../data/globalSurveillance.js";
 import { generateTrendsInsight } from "../lib/groqClient.js";
 
-export default function TrendsInsightPanel({ records, antibiogram, flags, meta, apiKey }) {
+export default function TrendsInsightPanel({ records, antibiogram, flags, meta, apiKey, onInsightChange }) {
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -28,6 +28,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
         meta,
       });
       setInsight(result);
+      onInsightChange?.(result);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -113,9 +114,14 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
       {error && <p className="mt-3 text-sm text-danger bg-danger/8 rounded-md p-3">{error}</p>}
 
       {insight && (
-        <div className="mt-4 p-4 border border-violet/25 bg-violet/8 rounded-md text-sm text-ink whitespace-pre-wrap leading-relaxed">
-          {insight}
-        </div>
+        <>
+          <div className="mt-4 p-4 border border-violet/25 bg-violet/8 rounded-md text-sm text-ink whitespace-pre-wrap leading-relaxed">
+            {insight}
+          </div>
+          <p className="mt-2 text-xs text-ink/45">
+            Included automatically in the .docx/.pdf export from the Overview section above.
+          </p>
+        </>
       )}
     </div>
   );
