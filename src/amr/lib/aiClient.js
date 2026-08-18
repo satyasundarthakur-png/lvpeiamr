@@ -70,6 +70,16 @@ async function callGemini({ apiKey, model, systemPrompt, userPrompt, maxTokens, 
       generationConfig: {
         temperature,
         maxOutputTokens: maxTokens,
+        // Gemini 2.5 Flash has "thinking" (extended internal reasoning)
+        // enabled by DEFAULT, and thinking tokens are billed against and
+        // counted toward the SAME maxOutputTokens budget as the visible
+        // response — the model can silently burn 90%+ of the budget
+        // reasoning before writing anything, producing a truncated or even
+        // empty response no matter how high maxOutputTokens is set. These
+        // are straightforward summarization/writing tasks that don't
+        // benefit from extended reasoning, so thinking is disabled outright
+        // rather than just working around it with a bigger budget.
+        thinkingConfig: { thinkingBudget: 0 },
       },
     }),
   });
