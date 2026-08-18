@@ -4,7 +4,7 @@ import { exportDocx, exportPdf } from "../lib/exportReport.js";
 
 const MAX_LOGO_BYTES = 500 * 1024; // 500KB — plenty for a report letterhead logo
 
-export default function ExportButtons({ antibiogram, flags, remedies, narrative, trendsInsight, meta }) {
+export default function ExportButtons({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta }) {
   const [busy, setBusy] = useState(null);
   const [showBranding, setShowBranding] = useState(false);
   const [instituteName, setInstituteName] = useState("");
@@ -36,9 +36,9 @@ export default function ExportButtons({ antibiogram, flags, remedies, narrative,
     setBusy(format);
     try {
       if (format === "docx") {
-        await exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, meta, branding });
+        await exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding });
       } else {
-        exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, meta, branding });
+        exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding });
       }
     } finally {
       setBusy(null);

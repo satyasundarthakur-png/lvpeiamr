@@ -11,6 +11,7 @@ import TrendAnalysisPanel from "./components/TrendAnalysisPanel.jsx";
 import MicrobiologyGlossary from "./components/MicrobiologyGlossary.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
+import { buildResistanceTrends } from "./lib/trendAnalysis.js";
 import { extractRecordsFromNotes } from "./lib/aiClient.js";
 
 function SectionHeading({ icon: Icon, title, tone = "brand", children }) {
@@ -49,6 +50,12 @@ export default function App() {
   const antibiogram = useMemo(() => buildAntibiogram(records), [records]);
   const flags = useMemo(() => flagPatterns(records), [records]);
   const remedies = useMemo(() => suggestRemedies(records), [records]);
+  // Matches TrendAnalysisPanel's default granularity and its "enough data"
+  // filter, so what's exported matches what's shown on screen by default.
+  const trendSeries = useMemo(() => {
+    const { series } = buildResistanceTrends(records, { granularity: "monthly" });
+    return series.filter((s) => s.points.filter((p) => p.n > 0).length >= 2);
+  }, [records]);
 
   const handleTabularParsed = (rows) => {
     setRawRows((prev) => [...prev, ...rows]);
@@ -154,6 +161,7 @@ export default function App() {
                   remedies={remedies}
                   narrative={narrative}
                   trendsInsight={trendsInsight}
+                  trendSeries={trendSeries}
                   meta={{ recordCount: records.length }}
                 />
               </SectionHeading>

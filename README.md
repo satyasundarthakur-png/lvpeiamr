@@ -73,7 +73,9 @@ all processed in your browser.
    tracking — no sequencing data exists anywhere in this pipeline, and the UI is
    explicit about that distinction. Trend directions require ≥2 periods with 5+
    isolates each; smaller samples are honestly marked "insufficient data" rather than
-   implying a false trend.
+   implying a false trend. Included in exported reports (docx/PDF) as a "Resistance
+   Trends Over Time" table — same monthly granularity and "enough data" filter as
+   the default on-screen view, so what's exported matches what's shown.
 
 **Organism grouping transparency**: species-level names (e.g. `Fusarium solani`)
 roll up into their standardized taxonomy group (`Fusarium species`) by default for a

@@ -86,7 +86,7 @@ function severityColorPdf(severity) {
 
 // ---------------------- DOCX ----------------------
 
-export async function exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, meta, branding }) {
+export async function exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding }) {
   const instituteName = branding?.instituteName?.trim();
   const logoDataUrl = branding?.logoDataUrl;
   const children = [];
@@ -219,6 +219,44 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, tren
     children.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
   }
 
+  if (trendSeries && trendSeries.length > 0) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: "Resistance Trends Over Time (Monthly)", bold: true, size: 26, color: BRAND.hex })],
+        spacing: { before: 300, after: 40 },
+      }),
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Phenotypic susceptibility drift across the periods in this dataset — not genomic mutation tracking, no sequencing data is used. Only pairs with at least 2 periods of data are shown.",
+            italics: true,
+            size: 16,
+            color: MUTED_HEX,
+          }),
+        ],
+        spacing: { after: 150 },
+      })
+    );
+    const trendRows = [
+      new TableRow({
+        children: [headerCell("Organism"), headerCell("Antimicrobial"), headerCell("Trend"), headerCell("Periods (% susceptible, n)")],
+      }),
+      ...trendSeries.map((s) => {
+        const periodsText = s.points.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  \u2192  ");
+        const trendColor = s.trend.direction === "up" ? SUCCESS.hex : s.trend.direction === "down" ? DANGER.hex : undefined;
+        return new TableRow({
+          children: [
+            cell(s.organism, { bold: true }),
+            cell(s.antimicrobial),
+            cell(s.trend.label, { color: trendColor, bold: !!trendColor }),
+            cell(periodsText),
+          ],
+        });
+      }),
+    ];
+    children.push(new Table({ rows: trendRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+  }
+
   children.push(
     new Paragraph({
       children: [new TextRun({ text: "Remedy Suggestions", bold: true, size: 26, color: VIOLET.hex })],
@@ -307,7 +345,7 @@ function renderTextBlockPdf(doc, text, { marginX, maxWidth, startY }) {
   return y;
 }
 
-export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, meta, branding }) {
+export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const marginX = 40;
   const pageWidth = 595; // A4 width in pt
@@ -454,6 +492,50 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsig
           const pct = parseInt(data.cell.raw, 10);
           if (pct >= 30) {
             data.cell.styles.textColor = DANGER.rgb;
+            data.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
+    });
+    y = doc.lastAutoTable.finalY + 25;
+  }
+
+  if (trendSeries && trendSeries.length > 0) {
+    if (y > 700) {
+      doc.addPage();
+      y = 50;
+    }
+    sectionHeading("Resistance Trends Over Time (Monthly)", BRAND.rgb);
+    doc.setFontSize(8.5);
+    doc.setFont(undefined, "italic");
+    doc.setTextColor(...MUTED_RGB);
+    doc.text("Phenotypic susceptibility drift, not genomic mutation tracking. Only pairs with >=2 periods of data shown.", marginX, y);
+    doc.setTextColor(...INK.rgb);
+    doc.setFont(undefined, "normal");
+    y += 14;
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: marginX, right: marginX },
+      head: [["Organism", "Antimicrobial", "Trend", "Periods (% susceptible, n)"]],
+      body: trendSeries.map((s) => [
+        sanitizeForPdf(s.organism),
+        sanitizeForPdf(s.antimicrobial),
+        sanitizeForPdf(s.trend.label),
+        sanitizeForPdf(s.points.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  ->  ")),
+      ]),
+      styles: { fontSize: 7.5, cellPadding: 4 },
+      headStyles: { fillColor: BRAND.rgb, textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [240, 249, 249] },
+      columnStyles: { 0: { cellWidth: 90 }, 1: { cellWidth: 75 }, 2: { cellWidth: 90 }, 3: { cellWidth: 220 } },
+      didParseCell: (data) => {
+        if (data.section === "body" && data.column.index === 2) {
+          const label = String(data.cell.raw).toLowerCase();
+          if (label.includes("worsening")) {
+            data.cell.styles.textColor = DANGER.rgb;
+            data.cell.styles.fontStyle = "bold";
+          } else if (label.includes("improving")) {
+            data.cell.styles.textColor = SUCCESS.rgb;
             data.cell.styles.fontStyle = "bold";
           }
         }
