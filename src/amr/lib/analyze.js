@@ -58,24 +58,50 @@ export function standardizeDataset(rows) {
 }
 
 // Build an antibiogram: organism x antimicrobial -> % susceptible
-export function buildAntibiogram(records, { firstIsolateOnly = true } = {}) {
+function normalizeExactLabel(raw) {
+  return String(raw || "").trim().replace(/\s+/g, " ");
+}
+
+// organismGrouping: "standardized" (default) rolls up to the canonical
+// taxonomy entry (e.g. Fusarium solani -> Fusarium species) for a usable
+// cumulative antibiogram, but tracks which raw species-level names were
+// folded into each row so that information isn't silently lost — each row
+// carries an `organismVariants` list of distinct raw names observed,
+// rendered as e.g. "Fusarium species (incl. Fusarium solani)". Setting
+// organismGrouping to "exact" instead groups by the raw entered text
+// verbatim, so species-level distinctions are never merged at all — useful
+// when a user wants to audit exactly what was in their original data.
+export function buildAntibiogram(records, { firstIsolateOnly = true, organismGrouping = "standardized" } = {}) {
   const source = firstIsolateOnly ? getFirstIsolatePerPatient(records) : records;
   const grid = {};
+  const variantTracker = {};
+
   source.forEach((r) => {
     if (r.rsi === "Unknown" || r.organism_code === "NOGROW") return;
-    const key = r.organism_standardized;
+    const key = organismGrouping === "exact" ? normalizeExactLabel(r.organism) : r.organism_standardized;
+    if (!key) return;
     if (!grid[key]) grid[key] = {};
     const abKey = r.antimicrobial_standardized;
     if (!grid[key][abKey]) grid[key][abKey] = { S: 0, I: 0, R: 0, total: 0 };
     grid[key][abKey][r.rsi] += 1;
     grid[key][abKey].total += 1;
+
+    if (organismGrouping === "standardized") {
+      const rawLabel = normalizeExactLabel(r.organism);
+      if (rawLabel && rawLabel.toLowerCase() !== key.toLowerCase()) {
+        if (!variantTracker[key]) variantTracker[key] = new Set();
+        variantTracker[key].add(rawLabel);
+      }
+    }
   });
 
   const table = [];
   Object.entries(grid).forEach(([organism, drugs]) => {
+    const variants = variantTracker[organism] ? Array.from(variantTracker[organism]).sort() : [];
     Object.entries(drugs).forEach(([antimicrobial, counts]) => {
       table.push({
         organism,
+        organismVariants: variants,
         antimicrobial,
         n: counts.total,
         pctSusceptible: Math.round(((counts.S) / counts.total) * 100),

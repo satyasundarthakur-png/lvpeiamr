@@ -62,6 +62,14 @@ all processed in your browser.
    explicit about that distinction. Trend directions require ≥2 periods with 5+
    isolates each; smaller samples are honestly marked "insufficient data" rather than
    implying a false trend.
+
+**Organism grouping transparency**: species-level names (e.g. `Fusarium solani`)
+roll up into their standardized taxonomy group (`Fusarium species`) by default for a
+usable cumulative antibiogram, but the rollup is never silent — each row shows which
+raw species names were folded in (`"Fusarium species (incl. Fusarium solani)"`), in
+both the on-screen table and exported reports. An "Exact species as entered" toggle
+in the Antibiogram section switches off rollup entirely for auditing the original
+data.
 5. **Contextualize** — a "Global trends & literature" panel surfaces real,
    named AMR surveillance programs (ARMOR, WHO GLASS, EARS-Net, ICMR AMR
    Network) and landmark ocular-microbiology literature relevant to whichever

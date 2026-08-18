@@ -207,7 +207,7 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, tren
         (r) =>
           new TableRow({
             children: [
-              cell(r.organism, { bold: true }),
+              cell(r.organismVariants && r.organismVariants.length > 0 ? `${r.organism} (incl. ${r.organismVariants.join(", ")})` : r.organism, { bold: true }),
               cell(r.antimicrobial),
               cell(r.n),
               cell(`${r.pctSusceptible}%`, { color: r.pctSusceptible >= 80 ? SUCCESS.hex : r.pctSusceptible >= 50 ? WARN.hex : DANGER.hex, bold: true }),
@@ -434,7 +434,13 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsig
       startY: y,
       margin: { left: marginX, right: marginX },
       head: [["Organism", "Antimicrobial", "n", "% Susceptible", "% Resistant"]],
-      body: antibiogram.map((r) => [sanitizeForPdf(r.organism), sanitizeForPdf(r.antimicrobial), r.n, `${r.pctSusceptible}%`, `${r.pctResistant}%`]),
+      body: antibiogram.map((r) => [
+        sanitizeForPdf(r.organismVariants && r.organismVariants.length > 0 ? `${r.organism} (incl. ${r.organismVariants.join(", ")})` : r.organism),
+        sanitizeForPdf(r.antimicrobial),
+        r.n,
+        `${r.pctSusceptible}%`,
+        `${r.pctResistant}%`,
+      ]),
       styles: { fontSize: 8, cellPadding: 4 },
       headStyles: { fillColor: BRAND.rgb, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: [240, 249, 249] },
