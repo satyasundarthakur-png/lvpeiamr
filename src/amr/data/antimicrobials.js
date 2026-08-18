@@ -15,7 +15,7 @@ export const ANTIMICROBIALS = [
   { code: "TOB", name: "Tobramycin", class: "Aminoglycoside", route: "Topical", synonyms: ["tobramycin", "tobrex"] },
   { code: "PEN", name: "Penicillin G", class: "Penicillin", route: "Systemic", synonyms: ["penicillin", "penicillin g"] },
   { code: "AMC", name: "Amoxicillin-clavulanate", class: "Beta-lactam/inhibitor", route: "Systemic", synonyms: ["amoxicillin clavulanate", "augmentin", "co-amoxiclav"] },
-  { code: "AZM", name: "Azithromycin", class: "Macrolide", route: "Topical/Systemic", synonyms: ["azithromycin", "azithromycin"] },
+  { code: "AZM", name: "Azithromycin", class: "Macrolide", route: "Topical/Systemic", synonyms: ["azithromycin", "azithromycin ophthalmic", "azasite"] },
   { code: "ERY", name: "Erythromycin", class: "Macrolide", route: "Topical", synonyms: ["erythromycin"] },
   { code: "CHL", name: "Chloramphenicol", class: "Amphenicol", route: "Topical", synonyms: ["chloramphenicol"] },
   { code: "POL", name: "Polymyxin B", class: "Polymyxin", route: "Topical", synonyms: ["polymyxin b", "polymyxin"] },

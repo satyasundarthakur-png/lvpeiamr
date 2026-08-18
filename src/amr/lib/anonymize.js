@@ -118,8 +118,11 @@ export function redactFreeText(text) {
   if (!text) return text;
   let redacted = text;
 
-  // Explicit "Name:" / "Patient:" / "Guardian:" label lines
-  redacted = redacted.replace(/\b(patient name|name|guardian name|father'?s? name|mother'?s? name)\s*[:\-]\s*[^\n,]{2,60}/gi, "$1: [REDACTED]");
+  // Explicit "Name:" / "Patient:" / "Guardian:" label lines. Covers bare
+  // labels ("Patient:", "Guardian:") as well as the "X Name:" forms, since
+  // EMR notes commonly use the shorter label without "Name".
+  redacted = redacted.replace(/\b(patient name|patient|guardian name|guardian|father'?s? name|mother'?s? name|next of kin|caregiver)\s*[:\-]\s*[^\n,]{2,60}/gi, "$1: [REDACTED]");
+  redacted = redacted.replace(/\bname\s*[:\-]\s*[^\n,]{2,60}/gi, "Name: [REDACTED]");
 
   // Titles followed by capitalized name pairs (Mr./Mrs./Ms./Dr. John Smith)
   redacted = redacted.replace(/\b(Mr|Mrs|Ms|Dr|Master|Miss)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)?/g, "$1. [REDACTED]");
