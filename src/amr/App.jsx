@@ -243,8 +243,8 @@ export default function App() {
 
       <footer className="mx-auto max-w-6xl px-6 pb-10 text-xs leading-relaxed text-ink/45">
         All standardization and flagging rules run locally in your browser. Only the AI
-        summary/document-extraction steps send data to Groq's API. No data is persisted unless you add
-        storage.
+        summary/document-extraction steps send data to your selected AI provider (Groq or Gemini). No data is
+        persisted unless you add storage.
         <p className="mt-3 text-ink/35">Developed and deployed by Dr. Umashankar</p>
       </footer>
     </div>
