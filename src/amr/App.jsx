@@ -239,6 +239,7 @@ export default function App() {
         All standardization and flagging rules run locally in your browser. Only the AI
         summary/document-extraction steps send data to Groq's API. No data is persisted unless you add
         storage.
+        <p className="mt-3 text-ink/35">Developed and deployed by Dr. Umashankar</p>
       </footer>
     </div>
   );
