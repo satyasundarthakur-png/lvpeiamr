@@ -77,14 +77,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "AMR Surveillance — Ophthalmic Infection & Antibiotic Policy Tracker" },
+      {
+        name: "description",
+        content:
+          "Turn CSV, Excel, or clinical note exports into a committee-ready antibiotic stewardship report. Standardized antibiograms, resistance flags, and global AMR trends context for ophthalmology — runs locally in your browser.",
+      },
+      { name: "author", content: "LVPEI / Neetmedss" },
+      { name: "theme-color", content: "#009e99" },
+      { property: "og:title", content: "AMR Surveillance — Ophthalmic Infection Tracker" },
+      {
+        property: "og:description",
+        content:
+          "Turn lab exports into an actionable antibiotic policy. Antibiograms, resistance flags, and stewardship reports built for ophthalmology.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://lvpeiamr.lovable.app/social-share.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:url", content: "https://lvpeiamr.lovable.app" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "AMR Surveillance — Ophthalmic Infection Tracker" },
+      {
+        name: "twitter:description",
+        content: "Turn lab exports into an actionable antibiotic policy for ophthalmology infection surveillance.",
+      },
+      { name: "twitter:image", content: "https://lvpeiamr.lovable.app/social-share.png" },
     ],
     links: [
       {
@@ -92,6 +110,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { rel: "icon", href: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "manifest", href: "/site.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
