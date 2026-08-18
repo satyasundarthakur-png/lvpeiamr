@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from "react";
-import { UploadCloud, FileSpreadsheet, FileText, AlertCircle } from "lucide-react";
+import { UploadCloud, FileSpreadsheet, FileText, AlertCircle, ShieldCheck } from "lucide-react";
 import { parseUploadedFile } from "../lib/fileParsers.js";
 
 export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySet }) {
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState(null); // { type: 'error'|'info', message }
   const [busy, setBusy] = useState(false);
+  const [anonReport, setAnonReport] = useState(null);
 
   const handleFiles = useCallback(
     async (fileList) => {
@@ -14,6 +15,7 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
       const files = Array.from(fileList);
       let allTabularRows = [];
       const docTexts = [];
+      let combinedReport = { dropped: new Set(), hashed: new Set() };
 
       try {
         for (const file of files) {
@@ -24,9 +26,18 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
               continue;
             }
             allTabularRows = allTabularRows.concat(parsed.rows);
+            parsed.anonymizationReport?.dropped.forEach((h) => combinedReport.dropped.add(h));
+            parsed.anonymizationReport?.hashed.forEach((h) => combinedReport.hashed.add(h));
           } else if (parsed.type === "document") {
             docTexts.push({ filename: file.name, rawText: parsed.rawText });
           }
+        }
+
+        if (combinedReport.dropped.size > 0 || combinedReport.hashed.size > 0) {
+          setAnonReport({
+            dropped: Array.from(combinedReport.dropped),
+            hashed: Array.from(combinedReport.hashed),
+          });
         }
 
         if (allTabularRows.length > 0) {
@@ -56,6 +67,14 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
 
   return (
     <div className="w-full">
+      <div className="flex items-start gap-2 text-xs text-ink/60 bg-brand/8 border border-brand/15 rounded-xl p-3 mb-4">
+        <ShieldCheck size={15} className="text-brand mt-0.5 shrink-0" />
+        <span>
+          Names, contact details, DOB, and other direct identifiers are stripped automatically on upload and never leave your browser.
+          Patient/MRN/UHID columns are one-way hashed to a pseudonymous ID so repeat episodes can still be linked.
+        </span>
+      </div>
+
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -102,6 +121,20 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
         </div>
       )}
 
+      {anonReport && (anonReport.dropped.length > 0 || anonReport.hashed.length > 0) && (
+        <div className="mt-3 flex items-start gap-2 text-sm rounded-md p-3 bg-brand/8 border border-brand/15 text-ink/80">
+          <ShieldCheck size={16} className="mt-0.5 shrink-0 text-brand" />
+          <div>
+            {anonReport.dropped.length > 0 && (
+              <p>Removed identifier column(s): <span className="font-mono">{anonReport.dropped.join(", ")}</span></p>
+            )}
+            {anonReport.hashed.length > 0 && (
+              <p className="mt-1">Hashed to pseudonymous ID: <span className="font-mono">{anonReport.hashed.join(", ")}</span></p>
+            )}
+          </div>
+        </div>
+      )}
+
       <details className="mt-4 text-xs text-ink/60">
         <summary className="cursor-pointer hover:text-ink/80">Expected CSV/Excel columns</summary>
         <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 font-mono">
@@ -116,6 +149,9 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
           <span>outcome</span>
         </div>
         <p className="mt-2">Headers are matched flexibly (e.g. "Antibiotic Given", "Drug Used" both map to antimicrobial_given). Unmapped columns are kept as-is.</p>
+        <p className="mt-2 font-medium text-ink/70">Do not include name, DOB, phone, email, or address columns — these are stripped automatically if present, but it's cleaner to leave them out of the export from your EMR entirely.</p>
+        <p className="mt-2">Suggested <span className="font-mono">infection_site</span> values: Endophthalmitis, Surgical site - cataract, Surgical site - keratoplasty, Microbial keratitis, Corneal ulcer, Conjunctivitis, Dacryocystitis, Orbital cellulitis, Scleritis, Post-injection endophthalmitis (free text also accepted).</p>
+        <p className="mt-1">Suggested <span className="font-mono">procedure_type</span> values: Cataract surgery (phaco/SICS), Penetrating keratoplasty, Pars plana vitrectomy, Trabeculectomy, DCR, Intravitreal injection, None.</p>
       </details>
     </div>
   );

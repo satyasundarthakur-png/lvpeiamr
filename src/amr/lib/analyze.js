@@ -132,6 +132,22 @@ export function flagPatterns(records) {
     }
   });
 
+  // 5. Route-of-administration mismatch: topical therapy for a deep infection
+  // (endophthalmitis) where systemic/intravitreal penetration is usually needed.
+  const routeMismatch = records.filter((r) => {
+    const site = String(r.infection_site || "").toLowerCase();
+    const route = String(r.route || "").toLowerCase();
+    return site.includes("endophthalmitis") && route.includes("topical");
+  });
+  if (routeMismatch.length > 0) {
+    flags.push({
+      severity: "medium",
+      title: `${routeMismatch.length} endophthalmitis case(s) treated with topical-only therapy`,
+      detail: "Topical antibiotics have limited intraocular penetration. Endophthalmitis typically needs intravitreal and/or systemic therapy — review whether route, not resistance, explains treatment failure here.",
+      records: routeMismatch,
+    });
+  }
+
   return flags.sort((a, b) => (a.severity === "high" ? -1 : 1) - (b.severity === "high" ? -1 : 1));
 }
 

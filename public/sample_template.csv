@@ -1,6 +1,11 @@
 patient_id,episode_date,infection_site,procedure_type,organism,antimicrobial_given,route,susceptibility_result,outcome
-PT001,2026-03-02,Endophthalmitis,Cataract surgery,Pseudomonas aeruginosa,Moxifloxacin,Topical,R,Treatment failure - reoperation
-PT002,2026-03-05,Surgical site,Cataract surgery,Staphylococcus aureus,Cefazolin,Intravitreal,S,Resolved
-PT003,2026-03-10,Corneal ulcer,None,Fusarium species,Natamycin,Topical,S,Persistent - slow response
-PT004,2026-03-14,Endophthalmitis,Vitrectomy,Klebsiella pneumoniae,Ceftazidime,Intravitreal,R,Treatment failure
-PT005,2026-03-18,Surgical site,Cataract surgery,No growth,Moxifloxacin,Topical,,Resolved
+PT001,2026-03-02,Endophthalmitis,Cataract surgery (phacoemulsification),Pseudomonas aeruginosa,Moxifloxacin,Topical,R,Treatment failure - reoperation
+PT002,2026-03-05,Surgical site - cataract,Cataract surgery (phacoemulsification),Staphylococcus aureus,Cefazolin,Intravitreal,S,Resolved
+PT003,2026-03-10,Microbial keratitis,None,Fusarium species,Natamycin,Topical,S,Persistent - slow response
+PT004,2026-03-14,Endophthalmitis,Pars plana vitrectomy,Klebsiella pneumoniae,Ceftazidime,Intravitreal,R,Treatment failure
+PT005,2026-03-18,Surgical site - cataract,Cataract surgery (phacoemulsification),No growth,Moxifloxacin,Topical,,Resolved
+PT006,2026-03-21,Corneal ulcer,None,Streptococcus pneumoniae,Ofloxacin,Topical,S,Resolved
+PT007,2026-03-25,Surgical site - keratoplasty,Penetrating keratoplasty,Staphylococcus aureus,Vancomycin,Topical,S,Resolved
+PT008,2026-03-28,Dacryocystitis,Dacryocystorhinostomy (DCR),Staphylococcus aureus,Amoxicillin-clavulanate,Systemic,R,Treatment failure - recurrence
+PT009,2026-04-02,Orbital cellulitis,None,Streptococcus pneumoniae,Ceftriaxone,Systemic,S,Resolved
+PT010,2026-04-06,Endophthalmitis,Intravitreal injection (anti-VEGF),Coagulase-negative Staphylococcus,Vancomycin,Intravitreal,S,Resolved

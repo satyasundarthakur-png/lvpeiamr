@@ -1,6 +1,7 @@
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import mammoth from "mammoth";
+import { anonymizeDataset, redactFreeText } from "./anonymize.js";
 
 // Expected logical columns (case-insensitive, flexible header matching).
 // The app tries to auto-map uploaded headers to these fields.
@@ -17,10 +18,10 @@ export const EXPECTED_FIELDS = [
 ];
 
 const HEADER_ALIASES = {
-  patient_id: ["patient id", "patientid", "mrn", "uhid", "id"],
+  patient_id: ["patient id", "patientid", "mrn", "uhid", "id", "hospital no", "registration no", "registration number"],
   episode_date: ["date", "episode date", "admission date", "culture date", "visit date"],
-  infection_site: ["infection site", "site", "diagnosis", "site of infection"],
-  procedure_type: ["procedure", "procedure type", "surgery", "surgery type"],
+  infection_site: ["infection site", "site", "diagnosis", "site of infection", "ocular site"],
+  procedure_type: ["procedure", "procedure type", "surgery", "surgery type", "ocular procedure"],
   organism: ["organism", "culture organism", "pathogen", "isolate"],
   antimicrobial_given: ["antibiotic", "antibiotic given", "antimicrobial", "drug used", "treatment"],
   route: ["route", "route of administration"],
@@ -105,14 +106,18 @@ export async function parseDocx(file) {
 export async function parseUploadedFile(file) {
   const name = file.name.toLowerCase();
   if (name.endsWith(".csv")) {
-    return { type: "tabular", rows: await parseCSV(file) };
+    const rows = await parseCSV(file);
+    const { rows: anonRows, report } = await anonymizeDataset(rows);
+    return { type: "tabular", rows: anonRows, anonymizationReport: report };
   }
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    return { type: "tabular", rows: await parseExcel(file) };
+    const rows = await parseExcel(file);
+    const { rows: anonRows, report } = await anonymizeDataset(rows);
+    return { type: "tabular", rows: anonRows, anonymizationReport: report };
   }
   if (name.endsWith(".docx")) {
     const { rawText, warnings } = await parseDocx(file);
-    return { type: "document", rawText, warnings };
+    return { type: "document", rawText: redactFreeText(rawText), warnings };
   }
   throw new Error(`Unsupported file type: ${file.name}. Please upload .csv, .xlsx, .xls, or .docx`);
 }
