@@ -57,6 +57,41 @@ function fmtDate() {
   return new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
+// Bounds a trend series list for a printed report: caps to the most
+// clinically noteworthy entries (Worsening first, sorted by magnitude, then
+// Improving, then Stable) so a dataset with many genuinely meaningful
+// trends still produces a usable document rather than dozens of pages.
+// Also compacts any individual series with a long period history down to
+// its first few and last few periods, since the trend classification is
+// itself based on comparing first vs last — the omitted middle periods
+// don't change what the reader needs to conclude, and the full detail
+// remains available in the on-screen dashboard's sparkline view.
+function summarizeTrendSeriesForExport(trendSeries, { maxSeries = 25, maxPeriodsPerSeries = 8 } = {}) {
+  const directionRank = { down: 0, up: 1, flat: 2 };
+  const sorted = [...trendSeries].sort((a, b) => {
+    const rankDiff = (directionRank[a.trend.direction] ?? 3) - (directionRank[b.trend.direction] ?? 3);
+    if (rankDiff !== 0) return rankDiff;
+    return Math.abs(b.trend.delta || 0) - Math.abs(a.trend.delta || 0);
+  });
+  const shown = sorted.slice(0, maxSeries).map((s) => {
+    if (s.points.length <= maxPeriodsPerSeries) return s;
+    const half = Math.floor(maxPeriodsPerSeries / 2);
+    const first = s.points.slice(0, half);
+    const last = s.points.slice(-half);
+    return { ...s, points: first, _omittedMiddle: s.points.length - first.length - last.length, _lastPoints: last };
+  });
+  return { shown, omittedCount: Math.max(0, sorted.length - maxSeries), totalCount: sorted.length };
+}
+
+function formatTrendPeriodsText(series) {
+  const base = series.points.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  \u2192  ");
+  if (series._lastPoints) {
+    const lastText = series._lastPoints.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  \u2192  ");
+    return `${base}  \u2192  [${series._omittedMiddle} earlier periods omitted]  \u2192  ${lastText}`;
+  }
+  return base;
+}
+
 // Renders a block of AI-generated text (possibly containing **bold**
 // markdown and multiple lines) as docx paragraphs with real bold runs.
 function renderTextBlockDocx(text, { size = 20 } = {}) {
@@ -220,6 +255,7 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, tren
   }
 
   if (trendSeries && trendSeries.length > 0) {
+    const { shown: trendShown, omittedCount: trendOmitted, totalCount: trendTotal } = summarizeTrendSeriesForExport(trendSeries);
     children.push(
       new Paragraph({
         children: [new TextRun({ text: "Resistance Trends Over Time (Monthly)", bold: true, size: 26, color: BRAND.hex })],
@@ -228,7 +264,9 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, tren
       new Paragraph({
         children: [
           new TextRun({
-            text: "Phenotypic susceptibility drift across the periods in this dataset — not genomic mutation tracking, no sequencing data is used. Only pairs with at least 2 periods of data are shown.",
+            text: `Phenotypic susceptibility drift across the periods in this dataset — not genomic mutation tracking, no sequencing data is used. Only organism-antimicrobial pairs with a confirmed trend (Improving/Worsening/Stable, requiring adequate sample size) are shown${
+              trendOmitted > 0 ? `, prioritized by severity — showing ${trendShown.length} of ${trendTotal}` : ""
+            }.`,
             italics: true,
             size: 16,
             color: MUTED_HEX,
@@ -241,8 +279,8 @@ export async function exportDocx({ antibiogram, flags, remedies, narrative, tren
       new TableRow({
         children: [headerCell("Organism"), headerCell("Antimicrobial"), headerCell("Trend"), headerCell("Periods (% susceptible, n)")],
       }),
-      ...trendSeries.map((s) => {
-        const periodsText = s.points.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  \u2192  ");
+      ...trendShown.map((s) => {
+        const periodsText = formatTrendPeriodsText(s);
         const trendColor = s.trend.direction === "up" ? SUCCESS.hex : s.trend.direction === "down" ? DANGER.hex : undefined;
         return new TableRow({
           children: [
@@ -501,6 +539,7 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsig
   }
 
   if (trendSeries && trendSeries.length > 0) {
+    const { shown: trendShown, omittedCount: trendOmitted, totalCount: trendTotal } = summarizeTrendSeriesForExport(trendSeries);
     if (y > 700) {
       doc.addPage();
       y = 50;
@@ -509,7 +548,10 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsig
     doc.setFontSize(8.5);
     doc.setFont(undefined, "italic");
     doc.setTextColor(...MUTED_RGB);
-    doc.text("Phenotypic susceptibility drift, not genomic mutation tracking. Only pairs with >=2 periods of data shown.", marginX, y);
+    const trendNote =
+      "Phenotypic susceptibility drift, not genomic mutation tracking. Only pairs with a confirmed trend (adequate sample size) are shown" +
+      (trendOmitted > 0 ? `, prioritized by severity - showing ${trendShown.length} of ${trendTotal}.` : ".");
+    doc.text(trendNote, marginX, y);
     doc.setTextColor(...INK.rgb);
     doc.setFont(undefined, "normal");
     y += 14;
@@ -518,11 +560,11 @@ export function exportPdf({ antibiogram, flags, remedies, narrative, trendsInsig
       startY: y,
       margin: { left: marginX, right: marginX },
       head: [["Organism", "Antimicrobial", "Trend", "Periods (% susceptible, n)"]],
-      body: trendSeries.map((s) => [
+      body: trendShown.map((s) => [
         sanitizeForPdf(s.organism),
         sanitizeForPdf(s.antimicrobial),
         sanitizeForPdf(s.trend.label),
-        sanitizeForPdf(s.points.map((p) => `${p.label}: ${p.pctSusceptible}% (n=${p.n})`).join("  ->  ")),
+        sanitizeForPdf(formatTrendPeriodsText(s)),
       ]),
       styles: { fontSize: 7.5, cellPadding: 4 },
       headStyles: { fillColor: BRAND.rgb, textColor: [255, 255, 255] },

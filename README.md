@@ -73,9 +73,15 @@ all processed in your browser.
    tracking — no sequencing data exists anywhere in this pipeline, and the UI is
    explicit about that distinction. Trend directions require ≥2 periods with 5+
    isolates each; smaller samples are honestly marked "insufficient data" rather than
-   implying a false trend. Included in exported reports (docx/PDF) as a "Resistance
-   Trends Over Time" table — same monthly granularity and "enough data" filter as
-   the default on-screen view, so what's exported matches what's shown.
+   implying a false trend — both the dashboard and exports filter on this actual
+   trend classification, not just "has more than one dated period", since a
+   multi-year dataset at monthly granularity would otherwise trivially clear that
+   weaker bar for nearly every pair even with only 1-2 isolates per month. Included
+   in exported reports (docx/PDF) as a "Resistance Trends Over Time" table, capped
+   to the most clinically noteworthy pairs (worsening trends first, by magnitude)
+   with an overflow note if more exist, and long period histories compacted to
+   their first/last few periods — so a large multi-year dataset produces a usable
+   document rather than dozens of pages of raw data.
 
 **Organism grouping transparency**: species-level names (e.g. `Fusarium solani`)
 roll up into their standardized taxonomy group (`Fusarium species`) by default for a

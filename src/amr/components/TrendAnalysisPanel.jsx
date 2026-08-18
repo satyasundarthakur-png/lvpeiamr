@@ -60,7 +60,16 @@ export default function TrendAnalysisPanel({ records = [] }) {
   const { series, undatedCount } = useMemo(() => buildResistanceTrends(records, { granularity }), [records, granularity]);
   const comparisons = useMemo(() => compareLatestPeriods(series), [series]);
 
-  const seriesWithEnoughData = series.filter((s) => s.points.filter((p) => p.n > 0).length >= 2);
+  // Filtering on "has >=2 dated periods with data" is too weak for
+  // multi-year datasets at monthly granularity — with enough calendar
+  // spread, nearly every organism-antimicrobial pair trivially clears that
+  // bar even with only 1-2 isolates per month, producing a huge list of
+  // "Insufficient data (small n)" entries that add noise rather than
+  // signal. The real filter should be whether classifyTrend() actually
+  // found a meaningful pattern (Improving/Worsening/Stable, which already
+  // requires >=5 isolates at both the first and last period compared) —
+  // not just whether calendar time happened to pass.
+  const seriesWithEnoughData = series.filter((s) => !s.trend.label.startsWith("Insufficient data"));
   const worsening = seriesWithEnoughData.filter((s) => s.trend.direction === "down");
 
   if (records.length === 0) {

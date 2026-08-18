@@ -52,9 +52,16 @@ export default function App() {
   const remedies = useMemo(() => suggestRemedies(records), [records]);
   // Matches TrendAnalysisPanel's default granularity and its "enough data"
   // filter, so what's exported matches what's shown on screen by default.
+  // The filter is on the trend CLASSIFICATION (Improving/Worsening/Stable),
+  // not just "has >=2 dated periods" — that weaker check trivially passes
+  // for almost every pair once a dataset spans enough calendar time, even
+  // with only 1-2 isolates per month, producing pages of noise instead of
+  // signal (found via review of a real multi-year synthetic dataset that
+  // otherwise exported a 22-page report of near-entirely "insufficient
+  // data" rows).
   const trendSeries = useMemo(() => {
     const { series } = buildResistanceTrends(records, { granularity: "monthly" });
-    return series.filter((s) => s.points.filter((p) => p.n > 0).length >= 2);
+    return series.filter((s) => !s.trend.label.startsWith("Insufficient data"));
   }, [records]);
 
   const handleTabularParsed = (rows) => {
