@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { Activity, Eye, Trash2, ShieldPlus, FlaskConical, Microscope, Sparkles } from "lucide-react";
+import { Activity, Eye, Trash2, ShieldPlus, FlaskConical, Microscope, Sparkles, Globe2 } from "lucide-react";
 import FileUpload from "./components/FileUpload.jsx";
 import SummaryStats from "./components/SummaryStats.jsx";
 import AntibiogramTable from "./components/AntibiogramTable.jsx";
 import FlaggedPatterns from "./components/FlaggedPatterns.jsx";
 import RemedySuggestions from "./components/RemedySuggestions.jsx";
 import PolicyNarrative from "./components/PolicyNarrative.jsx";
+import TrendsInsightPanel from "./components/TrendsInsightPanel.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
 import { extractRecordsFromNotes } from "./lib/groqClient.js";
@@ -176,6 +177,17 @@ export default function App() {
                 apiKey={apiKey}
                 setApiKey={setApiKey}
                 onNarrativeChange={setNarrative}
+              />
+            </section>
+
+            <section>
+              <SectionHeading icon={Globe2} title="Global trends & literature" tone="violet" />
+              <TrendsInsightPanel
+                records={records}
+                antibiogram={antibiogram}
+                flags={flags}
+                meta={{ recordCount: records.length }}
+                apiKey={apiKey}
               />
             </section>
           </>
