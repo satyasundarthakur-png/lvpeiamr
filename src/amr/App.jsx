@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Activity, Eye, Trash2 } from "lucide-react";
+import { Activity, Eye, Trash2, ShieldPlus, FlaskConical, Microscope, Sparkles } from "lucide-react";
 import FileUpload from "./components/FileUpload.jsx";
 import SummaryStats from "./components/SummaryStats.jsx";
 import AntibiogramTable from "./components/AntibiogramTable.jsx";
@@ -9,6 +9,27 @@ import PolicyNarrative from "./components/PolicyNarrative.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
 import { extractRecordsFromNotes } from "./lib/groqClient.js";
+
+function SectionHeading({ icon: Icon, title, tone = "brand", children }) {
+  const toneClass = {
+    brand: "text-brand bg-brand/10",
+    violet: "text-violet bg-violet/10",
+    coral: "text-coral bg-coral/10",
+    amber: "text-warn bg-amber/15",
+  }[tone];
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center gap-2.5">
+        <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${toneClass}`}>
+          <Icon size={16} />
+        </span>
+        <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-ink/70">{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function App() {
   const [rawRows, setRawRows] = useState([]);
@@ -49,22 +70,24 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-surface">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div className="app-canvas min-h-screen">
+      <header className="sticky top-0 z-20 border-b border-ink/8 bg-background/75 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-brand/10 flex items-center justify-center">
-              <Eye size={18} className="text-brand" />
+            <div className="gradient-brand flex h-10 w-10 items-center justify-center rounded-xl text-primary-foreground shadow-[var(--shadow-soft)]">
+              <Eye size={19} />
             </div>
             <div>
-              <h1 className="font-semibold text-ink text-lg leading-tight">AMR Surveillance</h1>
-              <p className="text-xs text-slate-500">Ophthalmic infection & antibiotic policy tracker</p>
+              <h1 className="text-lg font-semibold leading-tight text-ink">
+                AMR <span className="text-gradient">Surveillance</span>
+              </h1>
+              <p className="text-xs text-ink/55">Ophthalmic infection &amp; antibiotic policy tracker</p>
             </div>
           </div>
           {rawRows.length > 0 && (
             <button
               onClick={clearData}
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-danger transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-danger/25 bg-danger/8 px-3 py-1.5 text-sm text-danger transition-colors hover:bg-danger/15"
             >
               <Trash2 size={15} /> Clear data
             </button>
@@ -72,28 +95,47 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        <section>
-          <FileUpload
-            onTabularParsed={handleTabularParsed}
-            onDocumentParsed={handleDocumentParsed}
-            apiKeySet={!!apiKey}
-          />
-          {docBusy && (
-            <p className="mt-3 text-sm text-slate-500 flex items-center gap-2">
-              <Activity size={14} className="animate-pulse text-brand" /> Extracting structured records from document text via AI…
-            </p>
-          )}
-          {docError && (
-            <p className="mt-3 text-sm text-danger bg-red-50 rounded-md p-3">{docError}</p>
-          )}
+      <main className="mx-auto max-w-6xl space-y-10 px-6 py-10">
+        <section className="surface-card overflow-hidden">
+          <div className="gradient-sunrise h-1.5 w-full" />
+          <div className="p-6 sm:p-8">
+            <div className="mb-6 max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-violet/10 px-3 py-1 text-xs font-medium text-violet">
+                <Sparkles size={12} /> Local-first stewardship analytics
+              </span>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+                Turn lab exports into an{" "}
+                <span className="text-gradient">actionable antibiotic policy</span>
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink/60">
+                Drop in CSV, Excel, or Word case notes. Organism and drug names are standardized,
+                antibiograms built, resistance patterns flagged, and a committee-ready report exported —
+                all in your browser.
+              </p>
+            </div>
+            <FileUpload
+              onTabularParsed={handleTabularParsed}
+              onDocumentParsed={handleDocumentParsed}
+              apiKeySet={!!apiKey}
+            />
+            {docBusy && (
+              <p className="mt-3 flex items-center gap-2 text-sm text-ink/60">
+                <Activity size={14} className="animate-pulse text-brand" /> Extracting structured records
+                from document text via AI…
+              </p>
+            )}
+            {docError && (
+              <p className="mt-3 rounded-lg border border-danger/20 bg-danger/8 p-3 text-sm text-danger">
+                {docError}
+              </p>
+            )}
+          </div>
         </section>
 
         {records.length > 0 && (
           <>
             <section>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Overview</h2>
+              <SectionHeading icon={Activity} title="Overview" tone="brand">
                 <ExportButtons
                   antibiogram={antibiogram}
                   flags={flags}
@@ -101,31 +143,31 @@ export default function App() {
                   narrative={narrative}
                   meta={{ recordCount: records.length }}
                 />
-              </div>
+              </SectionHeading>
               <SummaryStats records={records} />
             </section>
 
             <section>
-              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Flagged patterns</h2>
+              <SectionHeading icon={ShieldPlus} title="Flagged patterns" tone="coral" />
               <FlaggedPatterns flags={flags} />
             </section>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid gap-8 md:grid-cols-2">
               <section>
-                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Antibiogram</h2>
+                <SectionHeading icon={Microscope} title="Antibiogram" tone="violet" />
                 <AntibiogramTable antibiogram={antibiogram} />
               </section>
 
               <section>
-                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Rule-based remedy suggestions</h2>
-                <div className="border border-slate-200 rounded-lg p-4 bg-white">
+                <SectionHeading icon={FlaskConical} title="Remedy suggestions" tone="amber" />
+                <div className="surface-card p-5">
                   <RemedySuggestions remedies={remedies} />
                 </div>
               </section>
             </div>
 
             <section>
-              <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">AI-generated summary</h2>
+              <SectionHeading icon={Sparkles} title="AI-generated summary" tone="brand" />
               <PolicyNarrative
                 antibiogram={antibiogram}
                 flags={flags}
@@ -140,14 +182,36 @@ export default function App() {
         )}
 
         {records.length === 0 && (
-          <p className="text-center text-sm text-slate-400 py-12">
-            Upload a CSV, Excel, or Word file to begin analysis.
-          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { icon: Microscope, tone: "brand", title: "Standardize", body: "Messy organism and drug spellings map to a reference taxonomy automatically." },
+              { icon: ShieldPlus, tone: "coral", title: "Flag", body: "Discordant therapy, high-resistance pairs, and site clusters surface instantly." },
+              { icon: Sparkles, tone: "violet", title: "Report", body: "Export a .docx or .pdf policy report with an optional AI-written summary." },
+            ].map((card) => (
+              <div key={card.title} className="surface-card lift-hover p-5">
+                <span
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg ${
+                    card.tone === "brand"
+                      ? "bg-brand/12 text-brand"
+                      : card.tone === "coral"
+                        ? "bg-coral/12 text-coral"
+                        : "bg-violet/12 text-violet"
+                  }`}
+                >
+                  <card.icon size={17} />
+                </span>
+                <p className="mt-3 font-semibold text-ink">{card.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-ink/60">{card.body}</p>
+              </div>
+            ))}
+          </div>
         )}
       </main>
 
-      <footer className="max-w-6xl mx-auto px-6 py-6 text-xs text-slate-400">
-        All standardization and flagging rules run locally in your browser. Only the AI summary/document-extraction steps send data to Groq's API. No data is persisted unless you add storage.
+      <footer className="mx-auto max-w-6xl px-6 pb-10 text-xs leading-relaxed text-ink/45">
+        All standardization and flagging rules run locally in your browser. Only the AI
+        summary/document-extraction steps send data to Groq's API. No data is persisted unless you add
+        storage.
       </footer>
     </div>
   );

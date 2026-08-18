@@ -6,7 +6,7 @@ export default function FlaggedPatterns({ flags }) {
 
   if (!flags || flags.length === 0) {
     return (
-      <p className="text-sm text-slate-500">No concerning patterns flagged in the current dataset.</p>
+      <p className="text-sm text-ink/60">No concerning patterns flagged in the current dataset.</p>
     );
   }
 
@@ -16,8 +16,8 @@ export default function FlaggedPatterns({ flags }) {
         const isOpen = expanded[i];
         const Icon = flag.severity === "high" ? AlertTriangle : AlertCircle;
         const colorClasses = flag.severity === "high"
-          ? "border-red-200 bg-red-50"
-          : "border-amber-200 bg-amber-50";
+          ? "border-red-200 bg-danger/8"
+          : "border-amber/35 bg-amber/10";
         const iconColor = flag.severity === "high" ? "text-danger" : "text-warn";
 
         return (
@@ -29,17 +29,17 @@ export default function FlaggedPatterns({ flags }) {
               <div className="flex items-start gap-3">
                 <Icon size={18} className={`mt-0.5 shrink-0 ${iconColor}`} />
                 <div>
-                  <p className="font-medium text-ink">{flag.title}</p>
-                  <p className="text-sm text-slate-600 mt-0.5">{flag.detail}</p>
+                  <p className="font-semibold text-ink">{flag.title}</p>
+                  <p className="text-sm text-ink/70 mt-0.5">{flag.detail}</p>
                 </div>
               </div>
-              {isOpen ? <ChevronUp size={16} className="shrink-0 mt-1 text-slate-400" /> : <ChevronDown size={16} className="shrink-0 mt-1 text-slate-400" />}
+              {isOpen ? <ChevronUp size={16} className="shrink-0 mt-1 text-ink/45" /> : <ChevronDown size={16} className="shrink-0 mt-1 text-ink/45" />}
             </button>
 
             {isOpen && flag.records && (
               <div className="mt-3 overflow-x-auto">
-                <table className="min-w-full text-xs bg-white rounded border border-slate-200">
-                  <thead className="bg-slate-50 text-slate-500 uppercase">
+                <table className="min-w-full overflow-hidden rounded-lg border border-ink/10 bg-background text-xs">
+                  <thead className="bg-brand/6 text-ink/60 uppercase">
                     <tr>
                       <th className="text-left px-3 py-1.5">Patient</th>
                       <th className="text-left px-3 py-1.5">Site</th>
@@ -51,7 +51,7 @@ export default function FlaggedPatterns({ flags }) {
                   </thead>
                   <tbody>
                     {flag.records.slice(0, 25).map((r, idx) => (
-                      <tr key={idx} className="border-t border-slate-100">
+                      <tr key={idx} className="border-t border-ink/8">
                         <td className="px-3 py-1.5">{r.patient_id || "—"}</td>
                         <td className="px-3 py-1.5">{r.infection_site || "—"}</td>
                         <td className="px-3 py-1.5">{r.organism_standardized || r.organism || "—"}</td>
@@ -63,7 +63,7 @@ export default function FlaggedPatterns({ flags }) {
                   </tbody>
                 </table>
                 {flag.records.length > 25 && (
-                  <p className="text-xs text-slate-400 mt-1">Showing 25 of {flag.records.length} records.</p>
+                  <p className="text-xs text-ink/45 mt-1">Showing 25 of {flag.records.length} records.</p>
                 )}
               </div>
             )}
