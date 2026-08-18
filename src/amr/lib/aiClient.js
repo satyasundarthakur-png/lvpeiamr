@@ -177,6 +177,7 @@ Write a concise antibiotic policy surveillance summary for an infection control 
 2. The most urgent pattern(s) requiring action, with brief reasoning. For a large dataset, group by THEME (e.g. "multiple Gram-negative organisms showed >=30% resistance to commonly used fluoroquinolones") rather than listing every individual organism-drug pair.
 3. Specific, actionable empiric antibiotic policy recommendations for ophthalmic infections (prophylaxis and treatment), grounded strictly in the data provided — do not invent statistics not present in the input.
 4. Caveats about sample size where n is small (below 10) — flag these as preliminary, not definitive.
+5. IMPORTANT: if the flagged patterns include both a "discordant empiric therapy" count and a separate "resistant therapy with non-resolved outcome" count, these are DIFFERENT things — the first is microbiological discordance only (drug didn't match culture), not all of which had bad outcomes, and the second is the smaller subset that also failed clinically. Do not describe the full discordant count as if all of those cases "occurred/persisted despite treatment" — only the non-resolved subset supports that claim.
 
 Keep it under 350 words, plain language suitable for a hospital committee, no markdown headers with #, use short paragraphs and a bullet list for recommendations. Prioritize covering the full scope of the findings over enumerating every row of data.`;
 }
@@ -190,7 +191,7 @@ export async function generatePolicyNarrative({ provider = "groq", apiKey, model
     systemPrompt:
       "You are a careful, evidence-grounded antimicrobial stewardship analyst. Never fabricate numbers not present in the input data.",
     userPrompt: prompt,
-    maxTokens: 1400,
+    maxTokens: 2000,
     temperature: 0.3,
   });
 }
@@ -255,7 +256,7 @@ export async function generateTrendsInsight({ provider = "groq", apiKey, model, 
     systemPrompt:
       "You are a careful, evidence-grounded AMR research analyst. You only reference the named programs/papers given to you. You never invent statistics, studies, or citations. You clearly distinguish local data from general published knowledge.",
     userPrompt: prompt,
-    maxTokens: 1200,
+    maxTokens: 1800,
     temperature: 0.3,
   });
 }

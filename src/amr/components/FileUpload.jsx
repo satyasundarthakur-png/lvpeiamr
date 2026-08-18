@@ -47,7 +47,7 @@ export default function FileUpload({ onTabularParsed, onDocumentParsed, apiKeySe
           if (!apiKeySet) {
             setStatus({
               type: "error",
-              message: "DOCX files need an AI extraction step. Add a Groq API key in Settings first, then re-upload the .docx file.",
+              message: "DOCX files need an AI extraction step. Add an API key (Groq or Gemini) in Settings first, then re-upload the .docx file.",
             });
           } else {
             onDocumentParsed(docTexts);

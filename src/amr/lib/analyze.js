@@ -184,14 +184,43 @@ export function getFirstIsolatePerPatient(records) {
 export function flagPatterns(records) {
   const flags = [];
 
-  // 1. Discordant empiric therapy cases (resistant organism, drug still given)
+  // 1. Discordant empiric therapy cases (resistant organism, drug still
+  // given). IMPORTANT: this counts MICROBIOLOGICAL discordance only — the
+  // drug given did not match what the culture showed was effective. It does
+  // NOT mean the infection necessarily persisted or the patient did poorly;
+  // many discordant cases still resolve (partial drug effect, host immune
+  // clearance, empiric therapy changed once culture results arrived, etc).
+  // A prior version of this flag's own description overstated this
+  // ("infection occurred/persisted despite treatment" for the full count),
+  // conflating microbiological discordance with clinical failure — caught
+  // via third-party review comparing this flag's claim against actual
+  // outcome data (893 of 1,360 discordant cases in a real test dataset had
+  // resolved). The distinct, higher-confidence clinical-failure subset is
+  // reported separately below.
   const discordant = records.filter((r) => r.concordance.startsWith("Discordant"));
   if (discordant.length > 0) {
     flags.push({
       severity: "high",
       title: `${discordant.length} case(s) of discordant empiric therapy`,
-      detail: "Antibiotic given was resistant per culture — infection occurred/persisted despite treatment.",
+      detail: "Antibiotic given was resistant per culture (microbiological discordance) — this reflects empiric-therapy accuracy against the culture result, not necessarily clinical outcome. See the separate 'resistant therapy with non-resolved outcome' flag below for the subset where this also coincided with treatment failure.",
       records: discordant,
+    });
+  }
+
+  // 1b. Resistant AND clinically non-resolved — the clearer, more
+  // clinically meaningful signal that a resistant empiric choice actually
+  // contributed to a poor outcome, rather than just being microbiologically
+  // mismatched. This is the subset of (1) above worth the most scrutiny.
+  const resistantAndFailed = discordant.filter((r) => {
+    const outcome = String(r.outcome || "").toLowerCase();
+    return /fail|reoperat|readmit|worsen|no improvement|persist/.test(outcome);
+  });
+  if (resistantAndFailed.length > 0) {
+    flags.push({
+      severity: "high",
+      title: `${resistantAndFailed.length} case(s) of resistant therapy with non-resolved outcome`,
+      detail: "Of the discordant cases above, these specifically had a non-resolved outcome (treatment failure, reoperation, persistence, readmission) — the clearest evidence in this dataset that a resistant empiric choice contributed to a poor clinical outcome, distinct from microbiological discordance alone.",
+      records: resistantAndFailed,
     });
   }
 

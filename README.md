@@ -58,7 +58,12 @@ all processed in your browser.
    truly Sensitive isolates versus Intermediate ones, since intermediate
    susceptibility isn't the same clinical claim as fully susceptible. Rule-based
    remedy suggestions are phrased as data rankings ("highest observed
-   susceptibility"), not as prescribing recommendations.
+   susceptibility"), not as prescribing recommendations. "Discordant empiric
+   therapy" (microbiological mismatch — drug given didn't match the culture
+   result) is tracked separately from "resistant therapy with non-resolved
+   outcome" (the smaller subset where that mismatch also coincided with a
+   documented poor outcome) — a dataset can have far more discordant cases
+   than actual clinical failures, since many discordant cases still resolve.
 5. **Track trends over time** — a separate weekly/monthly/yearly view (`lib/trendAnalysis.js`)
    tracks how susceptibility for each organism-antimicrobial pair drifts across the
    periods in your data, with sparkline visualization and automatic "worsening
