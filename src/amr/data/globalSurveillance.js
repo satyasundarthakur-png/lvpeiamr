@@ -8,14 +8,39 @@
 // Each entry lists organismCodes it's most relevant to (matching codes in
 // data/organisms.js) so the UI can surface the right references for whatever
 // organisms actually appear in the user's uploaded data.
+//
+// Entries with isInstitutional: true are LVPEI's own published research —
+// surfaced first wherever relevant, since a comparison against your own
+// institute's historical data is more actionable than a comparison against a
+// US or global cohort with a different patient population and climate.
+// headlineStats (where present) are real published figures, not invented —
+// each was verified against the source before inclusion, so the app can
+// actually benchmark your antibiogram numerically against LVPEI's own
+// published rates, not just link to the paper.
 
 export const SURVEILLANCE_PROGRAMS = [
+  {
+    id: "lvpei-network-antibiogram",
+    name: "LVPEI Network EMR-Driven Antibiogram (Das & Joseph, 2022)",
+    scope: "LVPEI multi-tier network, South India — 15,822 patients, Sep 2013–Dec 2021",
+    summary:
+      "The largest institutional antibiogram LVPEI has published: an EMR-driven analysis of bacterial antibiotic susceptibility across the LVPEI network. Gram-positive cocci/bacilli were most sensitive to vancomycin (86.83% / 92.89%), then cefazolin (80.88%) and amikacin; Gram-negative bacilli were most sensitive to ofloxacin (65.24%). The paper explicitly notes increasing resistance to fluoroquinolones and ceftazidime over the study period — directly comparable to this app's own antibiogram and trend outputs.",
+    organismCodes: ["STAAUR", "STACNS", "PSAER", "KLEPNE", "ECOLI", "STRPNE", "HAEINF"],
+    url: "https://pubmed.ncbi.nlm.nih.gov/36367511/",
+    isInstitutional: true,
+    headlineStats: {
+      "Gram-positive cocci susceptibility to vancomycin": "86.83%",
+      "Gram-positive bacilli susceptibility to vancomycin": "92.89%",
+      "Susceptibility to cefazolin": "80.88%",
+      "Gram-negative bacilli susceptibility to ofloxacin": "65.24%",
+    },
+  },
   {
     id: "armor",
     name: "ARMOR (Antibiotic Resistance Monitoring in Ocular MicRoorganisms)",
     scope: "US nationwide, ocular-pathogen-specific",
     summary:
-      "The only ongoing nationwide surveillance program specific to ocular pathogens, running since 2009. Tracks in vitro resistance in S. aureus, coagulase-negative staphylococci, S. pneumoniae, P. aeruginosa, and H. influenzae from eye infections across dozens of US sites.",
+      "The only ongoing nationwide surveillance program specific to ocular pathogens, running since 2009. Tracks in vitro resistance in S. aureus, coagulase-negative staphylococci, S. pneumoniae, P. aeruginosa, and H. influenzae from eye infections across dozens of US sites. Useful as an international comparison point alongside the LVPEI network data above, since patient population, climate, and antibiotic-use patterns differ meaningfully from South India.",
     organismCodes: ["STAAUR", "STACNS", "STRPNE", "PSAER", "HAEINF"],
     url: "https://pubmed.ncbi.nlm.nih.gov/30281547/",
   },
@@ -42,7 +67,7 @@ export const SURVEILLANCE_PROGRAMS = [
     name: "ICMR AMR Surveillance Network (India)",
     scope: "India, national",
     summary:
-      "India's national AMR surveillance network coordinated by ICMR, reporting resistance trends across a growing number of sentinel sites. The most directly comparable national-level dataset for an Indian tertiary eye-care setting, though it is not ocular-infection-specific.",
+      "India's national AMR surveillance network coordinated by ICMR, reporting resistance trends across a growing number of sentinel sites. Useful as a broader Indian national benchmark alongside the LVPEI-specific network data above, though it is not ocular-infection-specific.",
     organismCodes: ["STAAUR", "ECOLI", "KLEPNE", "PSAER", "STRPNE"],
     url: "https://main.icmr.nic.in/content/amr",
   },
@@ -51,6 +76,38 @@ export const SURVEILLANCE_PROGRAMS = [
 // Landmark / frequently-cited ocular microbiology literature, again keyed by
 // organism so the app can surface what's relevant to the user's own data.
 export const KEY_LITERATURE = [
+  {
+    id: "lvpei-endophthalmitis-25yr",
+    title: "Trends in microbiological spectrum of endophthalmitis at a single tertiary care ophthalmic hospital in India: a review of 25 years (Joseph et al., Eye 2019)",
+    organismCodes: ["STAAUR", "STACNS", "STRPNE", "PSAER", "FUNASP", "FUNCAN"],
+    note: "LVPEI KAR Campus, 1991–2015: of 9,278 endophthalmitis patients, 35.7% were culture-positive (85.56% bacteria, 11.66% fungi). Gram-positive organisms were 67.68% of bacterial isolates, most prevalently Streptococcus pneumoniae and Staphylococcus epidermidis; Pseudomonas aeruginosa was the most prevalent Gram-negative organism; Aspergillus flavus was the most common fungus, Candida species 6.9% of fungal isolates. Antibiotic susceptibility trends were separately tracked over the final 10 years (2005–2015) of the study — directly comparable to this app's own antibiogram and trends-over-time output.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/30792523/",
+    isInstitutional: true,
+  },
+  {
+    id: "lvpei-ocular-infection-epidemiology",
+    title: "The microbiological landscape and epidemiology of ocular infections in a multi-tier ophthalmology network in India (Das & Joseph, Eye 2022)",
+    organismCodes: ["STAAUR", "STACNS", "PSAER", "KLEPNE", "FUNFUS", "FUNASP", "FUNCAN"],
+    note: "Companion epidemiology paper to the LVPEI network antibiogram above, same 15,822-patient cohort (Sep 2013–Dec 2021): bacterial aetiology in 51.06% of cases, fungal in 38.27% — a notably high fungal burden reflecting LVPEI's South Indian, largely rural, agricultural referral base. Most specimens were corneal scrapings (68.61%).",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10219986/",
+    isInstitutional: true,
+  },
+  {
+    id: "lvpei-pseudomonas-st308-resistome",
+    title: "Development of antibiotic resistance in the ocular Pseudomonas aeruginosa clone ST308 over twenty years (Khan, Sharma et al., Exp Eye Res 2021)",
+    organismCodes: ["PSAER"],
+    note: "Tracked the same LVPEI Pseudomonas aeruginosa clone (ST308) from 1997 to 2018: the 2018 isolates had larger genomes and accessory gene content than the 1997 isolates, and one 2018 isolate was resistant to every antibiotic tested except polymyxin B — a striking within-institution illustration of resistance accumulation over two decades in a single lineage.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/33610601/",
+    isInstitutional: true,
+  },
+  {
+    id: "lvpei-antibiotic-resistance-review",
+    title: "Antibiotic resistance in ocular bacterial pathogens (Sharma, Indian J Med Microbiol 2011)",
+    organismCodes: ["STAAUR", "STACNS", "STRPNE", "PSAER", "HAEINF"],
+    note: "Foundational LVPEI review of ocular antibiotic administration routes (topical, subconjunctival, subtenon, intraocular) and how route affects achievable drug concentration relative to MIC — directly relevant to this app's route-mismatch flag for topical-only endophthalmitis therapy.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/21860100/",
+    isInstitutional: true,
+  },
   {
     id: "armor-conjunctival-2018",
     title: "Antibiotic resistance among bacterial conjunctival pathogens (ARMOR, 2009–2016)",
@@ -84,6 +141,12 @@ export const KEY_LITERATURE = [
 // Returns the surveillance programs and literature relevant to a given set of
 // organism codes present in the user's own antibiogram — used to avoid
 // showing irrelevant references when, say, no fungal organisms are present.
+// Institutional (LVPEI) sources are always sorted first within each list, so
+// the most locally actionable benchmark is what the user sees first.
+function sortInstitutionalFirst(list) {
+  return [...list].sort((a, b) => (b.isInstitutional ? 1 : 0) - (a.isInstitutional ? 1 : 0));
+}
+
 export function getRelevantReferences(organismCodes = []) {
   const codeSet = new Set(organismCodes.filter(Boolean));
   const matches = (refCodes) => refCodes.some((c) => codeSet.has(c));
@@ -99,5 +162,8 @@ export function getRelevantReferences(organismCodes = []) {
   const programsFinal = programs.length ? programs : SURVEILLANCE_PROGRAMS;
   const literatureFinal = literature.length ? literature : KEY_LITERATURE;
 
-  return { programs: programsFinal, literature: literatureFinal };
+  return {
+    programs: sortInstitutionalFirst(programsFinal),
+    literature: sortInstitutionalFirst(literatureFinal),
+  };
 }

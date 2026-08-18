@@ -70,9 +70,14 @@ export async function generatePolicyNarrative({ apiKey, antibiogram, flags, reme
 // statistics). This is a general-knowledge synthesis from the model, not a
 // live database lookup — the UI must label it as such.
 function buildTrendsPrompt({ antibiogram, flags, organismCodes, references, meta }) {
+  const institutionalPrograms = references.programs.filter((p) => p.isInstitutional);
+  const institutionalLiterature = references.literature.filter((l) => l.isInstitutional);
+  const hasInstitutionalData = institutionalPrograms.length > 0 || institutionalLiterature.length > 0;
+
   return `You are an ocular-infection AMR (antimicrobial resistance) research analyst. You are given:
 1) A local antibiogram from an ophthalmology unit.
 2) A curated list of REAL, named surveillance programs and literature relevant to the organisms present (use ONLY these as your source references — do not invent other studies, statistics, or citations).
+${hasInstitutionalData ? "3) Some of these references are the facility's OWN institute's previously published research (marked isInstitutional) — prioritize comparing the local data against these institutional benchmarks first, before broader international sources, since they reflect the same patient population, climate, and referral base." : ""}
 
 Facility context: ${meta?.facility || "Not specified"}
 Records analyzed: ${meta?.recordCount ?? "unknown"}
@@ -86,17 +91,17 @@ ${JSON.stringify(flags.map((f) => ({ title: f.title, detail: f.detail, severity:
 ORGANISMS PRESENT IN THIS DATA: ${organismCodes.join(", ") || "none"}
 
 REFERENCE SURVEILLANCE PROGRAMS (real, named — cite by name only, don't fabricate numbers from them unless given below):
-${JSON.stringify(references.programs.map((p) => ({ name: p.name, scope: p.scope, summary: p.summary })), null, 2)}
+${JSON.stringify(references.programs.map((p) => ({ name: p.name, scope: p.scope, summary: p.summary, isInstitutional: !!p.isInstitutional, headlineStats: p.headlineStats })), null, 2)}
 
 REFERENCE LITERATURE (real, named):
-${JSON.stringify(references.literature.map((l) => ({ title: l.title, note: l.note })), null, 2)}
+${JSON.stringify(references.literature.map((l) => ({ title: l.title, note: l.note, isInstitutional: !!l.isInstitutional })), null, 2)}
 
 Write a "Global Trends & Literature Context" briefing (under 300 words, plain language, no markdown headers with #) that:
-1. Notes which of the reference programs/papers above are most relevant to the organisms in THIS dataset.
-2. Describes, in general terms drawn from your own medical knowledge and the references above, what broader trends are typically reported for these organisms in ocular infections (e.g. rising methicillin resistance in staphylococci, generally preserved fluoroquinolone susceptibility in Pseudomonas, etc.) — clearly framed as general/published knowledge, not as a live statistic.
-3. Says explicitly whether the LOCAL data appears broadly consistent with, or notably different from, those general published trends — and flags this as worth deeper literature review if uncertain.
-4. Ends with one sentence reminding the reader this is a general-knowledge synthesis, not a live database query, and that current primary literature/GLASS/ARMOR reports should be checked directly for up-to-date figures.
-Do not state specific resistance percentages unless they appear in the LOCAL ANTIBIOGRAM DATA above or are explicitly given in the reference summaries.`;
+1. ${hasInstitutionalData ? "FIRST, compares the LOCAL antibiogram numerically against any headlineStats given above from the facility's own institutional references (e.g. 'this facility's own network previously reported X% susceptibility to vancomycin; the current data shows Y%') — this institutional comparison is the most important and actionable part of the briefing." : "Notes which of the reference programs/papers above are most relevant to the organisms in THIS dataset."}
+2. Then describes, in general terms drawn from your own medical knowledge and the broader (non-institutional) references above, what trends are typically reported internationally for these organisms in ocular infections — clearly framed as general/published knowledge, not as a live statistic.
+3. Says explicitly whether the LOCAL data appears broadly consistent with, or notably different from, both the institutional benchmark (if available) and the broader published trends — and flags this as worth deeper review if uncertain.
+4. Ends with one sentence reminding the reader this is a general-knowledge synthesis, not a live database query, and that current primary literature/institutional data should be checked directly for up-to-date figures.
+Do not state specific resistance percentages unless they appear in the LOCAL ANTIBIOGRAM DATA above or are explicitly given in the reference summaries/headlineStats.`;
 }
 
 export async function generateTrendsInsight({ apiKey, antibiogram, flags, organismCodes, references, meta, model = DEFAULT_MODEL }) {

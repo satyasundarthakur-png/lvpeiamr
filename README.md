@@ -71,12 +71,19 @@ both the on-screen table and exported reports. An "Exact species as entered" tog
 in the Antibiogram section switches off rollup entirely for auditing the original
 data.
 5. **Contextualize** — a "Global trends & literature" panel surfaces real,
-   named AMR surveillance programs (ARMOR, WHO GLASS, EARS-Net, ICMR AMR
-   Network) and landmark ocular-microbiology literature relevant to whichever
+   named AMR surveillance programs and literature relevant to whichever
    organisms are actually present in your data, plus an optional AI briefing
-   comparing your local antibiogram to those published trends. This is a
-   curated static reference list plus a general-knowledge AI synthesis — not
-   a live database query.
+   comparing your local antibiogram to those published trends. **LVPEI's own
+   published research is included and prioritized** — the 15,822-patient
+   network antibiogram (Das & Joseph, J Med Microbiol 2022), the 25-year
+   endophthalmitis trends review (Joseph et al., Eye 2019), the 20-year
+   Pseudomonas ST308 resistome study (Khan/Sharma et al., Exp Eye Res 2021),
+   and Sharma's foundational review of ocular antibiotic routes — each with
+   real published headline figures the AI briefing explicitly compares your
+   data against before looking at broader international sources (ARMOR, WHO
+   GLASS, EARS-Net, ICMR). Institutional sources are visually badged "LVPEI"
+   and always sorted first. This is a curated static reference list plus a
+   general-knowledge AI synthesis — not a live database query.
 6. **Report** — export a `.docx` or `.pdf` stewardship report with the app's
    brand styling (colored headings, severity-coded table cells), optionally
    including an AI-generated plain-language summary and policy

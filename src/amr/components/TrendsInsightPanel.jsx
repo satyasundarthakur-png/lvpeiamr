@@ -52,17 +52,34 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
           <p className="text-xs font-semibold uppercase tracking-wide text-ink/45 mb-2">Surveillance programs</p>
           <ul className="space-y-2">
             {references.programs.map((p) => (
-              <li key={p.id} className="text-sm rounded-lg border border-ink/10 p-2.5">
-                <a
-                  href={p.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-brand hover:underline inline-flex items-center gap-1"
-                >
-                  {p.name} <ExternalLink size={12} />
-                </a>
+              <li key={p.id} className={`text-sm rounded-lg border p-2.5 ${p.isInstitutional ? "border-brand/30 bg-brand/6" : "border-ink/10"}`}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand hover:underline inline-flex items-center gap-1"
+                  >
+                    {p.name} <ExternalLink size={12} />
+                  </a>
+                  {p.isInstitutional && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-brand bg-brand/15 rounded-full px-1.5 py-0.5">
+                      LVPEI
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-ink/50 mt-0.5">{p.scope}</p>
                 <p className="text-xs text-ink/60 mt-1 leading-relaxed">{p.summary}</p>
+                {p.headlineStats && (
+                  <dl className="mt-2 grid grid-cols-1 gap-0.5 text-xs">
+                    {Object.entries(p.headlineStats).map(([label, value]) => (
+                      <div key={label} className="flex justify-between gap-2">
+                        <dt className="text-ink/50">{label}</dt>
+                        <dd className="font-medium text-ink/70">{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
               </li>
             ))}
           </ul>
@@ -74,15 +91,22 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
           </p>
           <ul className="space-y-2">
             {references.literature.map((l) => (
-              <li key={l.id} className="text-sm rounded-lg border border-ink/10 p-2.5">
-                <a
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-brand hover:underline inline-flex items-center gap-1"
-                >
-                  {l.title} <ExternalLink size={12} />
-                </a>
+              <li key={l.id} className={`text-sm rounded-lg border p-2.5 ${l.isInstitutional ? "border-brand/30 bg-brand/6" : "border-ink/10"}`}>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand hover:underline inline-flex items-center gap-1"
+                  >
+                    {l.title} <ExternalLink size={12} />
+                  </a>
+                  {l.isInstitutional && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-brand bg-brand/15 rounded-full px-1.5 py-0.5">
+                      LVPEI
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-ink/60 mt-1 leading-relaxed">{l.note}</p>
               </li>
             ))}
