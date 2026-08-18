@@ -26,7 +26,7 @@ export const PROVIDERS = {
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 const GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-async function callGroq({ apiKey, model, systemPrompt, userPrompt, maxTokens, temperature, jsonOutput }) {
+async function callGroq({ apiKey, model, systemPrompt, userPrompt, maxTokens, temperature }) {
   const res = await fetch(GROQ_ENDPOINT, {
     method: "POST",
     headers: {
@@ -48,7 +48,15 @@ async function callGroq({ apiKey, model, systemPrompt, userPrompt, maxTokens, te
     throw new Error(`Groq API error (${res.status}): ${errText}`);
   }
   const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || "";
+  const choice = data.choices?.[0];
+  const text = choice?.message?.content?.trim() || "";
+  // A response cut off mid-sentence by the token budget is worse than an
+  // obviously-truncated one — flag it visibly rather than silently handing
+  // back a paragraph that just stops.
+  if (choice?.finish_reason === "length") {
+    return text + "\n\n[Response was cut off — the AI ran out of space before finishing. Try regenerating, or switch provider.]";
+  }
+  return text;
 }
 
 async function callGemini({ apiKey, model, systemPrompt, userPrompt, maxTokens, temperature }) {
@@ -71,12 +79,12 @@ async function callGemini({ apiKey, model, systemPrompt, userPrompt, maxTokens, 
   }
   const data = await res.json();
   const candidate = data.candidates?.[0];
-  // Gemini can return an empty parts array if the response was cut off by
-  // maxOutputTokens on a "thinking" pass — surface a clearer error than a
-  // silent empty string in that case.
   const text = candidate?.content?.parts?.map((p) => p.text || "").join("") || "";
   if (!text && candidate?.finishReason === "MAX_TOKENS") {
-    throw new Error("Gemini response was cut off (max output tokens reached) before producing text. Try again.");
+    throw new Error("Gemini response was cut off (max output tokens reached) before producing any text. Try again.");
+  }
+  if (candidate?.finishReason === "MAX_TOKENS") {
+    return text.trim() + "\n\n[Response was cut off — the AI ran out of space before finishing. Try regenerating, or switch provider.]";
   }
   return text.trim();
 }
@@ -127,7 +135,7 @@ export async function generatePolicyNarrative({ provider = "groq", apiKey, model
     systemPrompt:
       "You are a careful, evidence-grounded antimicrobial stewardship analyst. Never fabricate numbers not present in the input data.",
     userPrompt: prompt,
-    maxTokens: 900,
+    maxTokens: 1400,
     temperature: 0.3,
   });
 }
@@ -166,7 +174,7 @@ ${JSON.stringify(references.programs.map((p) => ({ name: p.name, scope: p.scope,
 REFERENCE LITERATURE (real, named):
 ${JSON.stringify(references.literature.map((l) => ({ title: l.title, note: l.note, isInstitutional: !!l.isInstitutional, peerInstitution: l.peerInstitution || null })), null, 2)}
 
-Write a "Global Trends & Literature Context" briefing (under 300 words, plain language, no markdown headers with #) that:
+Write a "Global Trends & Literature Context" briefing (400-450 words — this covers institutional, peer-institution, AND broader trends, so use the space; do not sacrifice completeness for brevity, plain language, no markdown headers with #) that:
 1. ${hasInstitutionalData ? "FIRST, compares the LOCAL antibiogram numerically against any headlineStats given above from the facility's own institutional references (e.g. 'this facility's own network previously reported X% susceptibility to vancomycin; the current data shows Y%') — this institutional comparison is the most important and actionable part of the briefing." : "Notes which of the reference programs/papers above are most relevant to the organisms in THIS dataset."}
 2. ${hasPeerData ? "SECOND, briefly notes how the local data compares to the peer Indian institution references, if their notes contain comparable figures — framed as a national comparison, not the facility's own history." : ""}
 3. Then describes, in general terms drawn from your own medical knowledge and the broader (non-institutional, non-peer) references above, what trends are typically reported internationally for these organisms in ocular infections — clearly framed as general/published knowledge, not as a live statistic.
@@ -184,7 +192,7 @@ export async function generateTrendsInsight({ provider = "groq", apiKey, model, 
     systemPrompt:
       "You are a careful, evidence-grounded AMR research analyst. You only reference the named programs/papers given to you. You never invent statistics, studies, or citations. You clearly distinguish local data from general published knowledge.",
     userPrompt: prompt,
-    maxTokens: 700,
+    maxTokens: 1200,
     temperature: 0.3,
   });
 }
