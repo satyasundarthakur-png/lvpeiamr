@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Globe2, Loader2, ExternalLink, BookOpen, Sparkles, Info } from "lucide-react";
 import { getRelevantReferences } from "../data/globalSurveillance.js";
-import { generateTrendsInsight } from "../lib/groqClient.js";
+import { generateTrendsInsight, PROVIDERS } from "../lib/aiClient.js";
 
 function InstitutionBadge({ entry }) {
   if (entry.isInstitutional) {
@@ -21,7 +21,7 @@ function InstitutionBadge({ entry }) {
   return null;
 }
 
-export default function TrendsInsightPanel({ records, antibiogram, flags, meta, apiKey, onInsightChange }) {
+export default function TrendsInsightPanel({ records, antibiogram, flags, meta, provider, apiKey, onInsightChange }) {
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,6 +38,7 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
     setError(null);
     try {
       const result = await generateTrendsInsight({
+        provider,
         apiKey,
         antibiogram,
         flags,
@@ -139,10 +140,10 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
         className="flex items-center gap-2 px-4 py-2 btn-brand text-sm rounded-xl font-medium disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-        {loading ? "Comparing to published trends…" : "Generate trends briefing"}
+        {loading ? "Comparing to published trends…" : `Generate trends briefing (${PROVIDERS[provider]?.label || provider})`}
       </button>
       {!apiKey && (
-        <p className="text-xs text-ink/45 mt-2">Add a Groq API key in the AI summary section above to enable this.</p>
+        <p className="text-xs text-ink/45 mt-2">Add an API key in the AI summary section above to enable this.</p>
       )}
 
       {error && <p className="mt-3 text-sm text-danger bg-danger/8 rounded-md p-3">{error}</p>}

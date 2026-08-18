@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Sparkles, Loader2, Settings } from "lucide-react";
-import { generatePolicyNarrative } from "../lib/groqClient.js";
+import { generatePolicyNarrative, PROVIDERS } from "../lib/aiClient.js";
 
-export default function PolicyNarrative({ antibiogram, flags, remedies, meta, apiKey, setApiKey, onNarrativeChange }) {
+export default function PolicyNarrative({ antibiogram, flags, remedies, meta, provider, setProvider, apiKey, setApiKey, onNarrativeChange }) {
   const [narrative, setNarrative] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -12,7 +12,7 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
     setLoading(true);
     setError(null);
     try {
-      const result = await generatePolicyNarrative({ apiKey, antibiogram, flags, remedies, meta });
+      const result = await generatePolicyNarrative({ provider, apiKey, antibiogram, flags, remedies, meta });
       setNarrative(result);
       onNarrativeChange?.(result);
     } catch (err) {
@@ -21,6 +21,8 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
       setLoading(false);
     }
   };
+
+  const providerInfo = PROVIDERS[provider];
 
   return (
     <div className="surface-card p-5">
@@ -40,24 +42,40 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
 
       {showSettings && (
         <div className="mb-4 p-3 rounded-xl border border-brand/20 bg-brand/6">
-          <label className="block text-xs font-semibold text-ink/70 mb-1">
-            Groq API key
-          </label>
+          <label className="block text-xs font-semibold text-ink/70 mb-1">AI provider</label>
+          <div className="flex items-center gap-2 mb-3">
+            {Object.entries(PROVIDERS).map(([id, info]) => (
+              <button
+                key={id}
+                onClick={() => setProvider(id)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  provider === id ? "bg-brand/15 text-brand" : "text-ink/50 hover:text-ink/70 hover:bg-ink/5"
+                }`}
+              >
+                {info.label}
+              </button>
+            ))}
+          </div>
+
+          <label className="block text-xs font-semibold text-ink/70 mb-1">{providerInfo.label} API key</label>
           <input
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="gsk_..."
+            placeholder={providerInfo.keyPlaceholder}
             className="w-full text-sm rounded-lg border border-ink/15 bg-background px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-brand/45"
           />
           <p className="text-xs text-ink/45 mt-1">
-            Stored only in this browser session. For production, move this call server-side (e.g. a Supabase Edge Function) so the key isn't exposed in the client bundle.
+            {providerInfo.keyHint}. Stored only in this browser session, separately per provider — switching providers
+            doesn't lose the other key. For production, move this call server-side (e.g. a Supabase Edge Function) so
+            the key isn't exposed in the client bundle.
           </p>
         </div>
       )}
 
       <p className="text-sm text-ink/60 mb-3">
-        Generates a plain-language surveillance summary and empiric policy recommendation from the antibiogram and flagged patterns above, grounded strictly in your uploaded data.
+        Generates a plain-language surveillance summary and empiric policy recommendation from the antibiogram and
+        flagged patterns above, grounded strictly in your uploaded data.
       </p>
 
       <button
@@ -66,7 +84,7 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, ap
         className="flex items-center gap-2 px-4 py-2 btn-brand text-sm rounded-xl font-medium disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-        {loading ? "Analyzing…" : "Generate summary"}
+        {loading ? "Analyzing…" : `Generate summary (${providerInfo.label})`}
       </button>
 
       {error && (

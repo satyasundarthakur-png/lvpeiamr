@@ -115,9 +115,13 @@ data.
   Workers via Nitro).
 - **Tailwind v4** for styling; app-specific brand tokens (teal/violet/coral
   gradient) live in `src/styles.css`.
-- **Groq** (OpenAI-compatible endpoint) powers the optional AI features:
-  document-to-record extraction, the policy narrative, and the global-trends
-  briefing. Default model: `openai/gpt-oss-120b`.
+- **Groq or Google Gemini** power the optional AI features (document-to-record
+  extraction, the policy narrative, and the global-trends briefing) — switch
+  providers from the AI settings panel if one hits a rate limit or you'd
+  rather use the other. Default models: `openai/gpt-oss-120b` (Groq),
+  `gemini-2.5-flash` (Gemini). Each provider's API key is stored separately
+  (session-only), so switching doesn't lose the other key. See
+  `lib/aiClient.js`.
 - All core logic — parsing, anonymization, standardization, flagging,
   antibiogram construction, report export — runs client-side with no
   backend. Only the AI calls leave the browser (directly to Groq's API).
@@ -132,7 +136,7 @@ src/amr/
     fileParsers.js            # CSV/Excel/DOCX parsing + header aliasing
     anonymize.js               # PII drop/hash/redact layer
     analyze.js                 # standardization, antibiogram, flags, remedies
-    groqClient.js               # Groq API calls (extraction, narrative, trends)
+    aiClient.js                  # Groq/Gemini API calls (extraction, narrative, trends)
     exportReport.js            # .docx / .pdf report generation
   data/
     organisms.js                # ophthalmic-pathogen reference taxonomy
@@ -142,14 +146,15 @@ src/amr/
 
 ## Security notes for deployers
 
-- The Groq API key is entered in-app (session-only, never persisted) and
-  used to call Groq **directly from the browser** — the key is visible in
-  network requests while active. For a production deployment, proxy these
-  calls through a server-side function (e.g. a Supabase Edge Function) so
-  the key is never exposed client-side.
+- Each provider's API key is entered in-app (session-only, never persisted)
+  and used to call Groq or Gemini **directly from the browser** — the key is
+  visible in network requests while active. For a production deployment,
+  proxy these calls through a server-side function (e.g. a Supabase Edge
+  Function) so the key is never exposed client-side.
 - The anonymization layer runs entirely in-browser and nothing is uploaded
   or logged externally except the (already-anonymized/redacted) payload sent
-  to Groq for AI features. If you don't need the AI features, the app is
+  to Groq/Gemini for AI features. If you don't need the AI features, the app
+  is
   fully usable — and fully local — without ever entering an API key.
 
 ## Development

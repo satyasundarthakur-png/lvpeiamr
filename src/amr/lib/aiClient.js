@@ -1,13 +1,99 @@
-// Calls Groq's OpenAI-compatible chat completions endpoint directly from the browser.
-// NOTE: for a production deployment, proxy this through a Supabase Edge Function
-// so the Groq API key is never exposed client-side. A stub for that is in
-// src/lib/groqClient.js -> callViaProxy(). For quick Lovable prototyping, the
-// direct call below works if you accept the key being visible in the browser bundle.
+// Multi-provider AI client. Supports Groq (OpenAI-compatible chat completions)
+// and Google Gemini (generateContent), so a rate limit or outage on one
+// provider doesn't block every AI-assisted feature in the app — the person
+// can switch providers from the same settings panel.
+//
+// NOTE: for a production deployment, proxy these calls through a
+// server-side function (e.g. a Supabase Edge Function) so API keys are
+// never exposed client-side. For quick prototyping, the direct calls below
+// work if you accept the key being visible in the browser bundle.
+
+export const PROVIDERS = {
+  groq: {
+    label: "Groq",
+    defaultModel: "openai/gpt-oss-120b",
+    keyPlaceholder: "gsk_...",
+    keyHint: "Get a free key at console.groq.com",
+  },
+  gemini: {
+    label: "Google Gemini",
+    defaultModel: "gemini-2.5-flash",
+    keyPlaceholder: "AIza...",
+    keyHint: "Get a free key at aistudio.google.com/apikey",
+  },
+};
 
 const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_MODEL = "openai/gpt-oss-120b";
+const GEMINI_ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
-function buildPrompt({ antibiogram, flags, remedies, meta }) {
+async function callGroq({ apiKey, model, systemPrompt, userPrompt, maxTokens, temperature, jsonOutput }) {
+  const res = await fetch(GROQ_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: maxTokens,
+      temperature,
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Groq API error (${res.status}): ${errText}`);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content?.trim() || "";
+}
+
+async function callGemini({ apiKey, model, systemPrompt, userPrompt, maxTokens, temperature }) {
+  const url = `${GEMINI_ENDPOINT_BASE}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error (${res.status}): ${errText}`);
+  }
+  const data = await res.json();
+  const candidate = data.candidates?.[0];
+  // Gemini can return an empty parts array if the response was cut off by
+  // maxOutputTokens on a "thinking" pass — surface a clearer error than a
+  // silent empty string in that case.
+  const text = candidate?.content?.parts?.map((p) => p.text || "").join("") || "";
+  if (!text && candidate?.finishReason === "MAX_TOKENS") {
+    throw new Error("Gemini response was cut off (max output tokens reached) before producing text. Try again.");
+  }
+  return text.trim();
+}
+
+async function callChatCompletion({ provider, apiKey, model, systemPrompt, userPrompt, maxTokens, temperature }) {
+  if (!apiKey) {
+    const label = PROVIDERS[provider]?.label || provider;
+    throw new Error(`Missing ${label} API key. Add it in Settings before using this feature.`);
+  }
+  const resolvedModel = model || PROVIDERS[provider]?.defaultModel;
+  if (provider === "gemini") {
+    return callGemini({ apiKey, model: resolvedModel, systemPrompt, userPrompt, maxTokens, temperature });
+  }
+  return callGroq({ apiKey, model: resolvedModel, systemPrompt, userPrompt, maxTokens, temperature });
+}
+
+function buildPolicyPrompt({ antibiogram, flags, remedies, meta }) {
   return `You are an antimicrobial stewardship analyst reviewing ophthalmology infection surveillance data.
 
 Facility context: ${meta?.facility || "Not specified"}
@@ -32,36 +118,18 @@ Write a concise antibiotic policy surveillance summary for an infection control 
 Keep it under 350 words, plain language suitable for a hospital committee, no markdown headers with #, use short paragraphs and a bullet list for recommendations.`;
 }
 
-export async function generatePolicyNarrative({ apiKey, antibiogram, flags, remedies, meta, model = DEFAULT_MODEL }) {
-  if (!apiKey) {
-    throw new Error("Missing Groq API key. Add it in Settings before generating an AI summary.");
-  }
-  const prompt = buildPrompt({ antibiogram, flags, remedies, meta });
-
-  const res = await fetch(GROQ_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "You are a careful, evidence-grounded antimicrobial stewardship analyst. Never fabricate numbers not present in the input data." },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 900,
-      temperature: 0.3,
-    }),
+export async function generatePolicyNarrative({ provider = "groq", apiKey, model, antibiogram, flags, remedies, meta }) {
+  const prompt = buildPolicyPrompt({ antibiogram, flags, remedies, meta });
+  return callChatCompletion({
+    provider,
+    apiKey,
+    model,
+    systemPrompt:
+      "You are a careful, evidence-grounded antimicrobial stewardship analyst. Never fabricate numbers not present in the input data.",
+    userPrompt: prompt,
+    maxTokens: 900,
+    temperature: 0.3,
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Groq API error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || "No response generated.";
 }
 
 // Contextual "global trends" briefing: compares the user's own antibiogram
@@ -107,46 +175,21 @@ Write a "Global Trends & Literature Context" briefing (under 300 words, plain la
 Do not state specific resistance percentages unless they appear in the LOCAL ANTIBIOGRAM DATA above or are explicitly given in the reference summaries/headlineStats.`;
 }
 
-export async function generateTrendsInsight({ apiKey, antibiogram, flags, organismCodes, references, meta, model = DEFAULT_MODEL }) {
-  if (!apiKey) {
-    throw new Error("Missing Groq API key. Add it in Settings before generating trends insight.");
-  }
+export async function generateTrendsInsight({ provider = "groq", apiKey, model, antibiogram, flags, organismCodes, references, meta }) {
   const prompt = buildTrendsPrompt({ antibiogram, flags, organismCodes, references, meta });
-
-  const res = await fetch(GROQ_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a careful, evidence-grounded AMR research analyst. You only reference the named programs/papers given to you. You never invent statistics, studies, or citations. You clearly distinguish local data from general published knowledge.",
-        },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 700,
-      temperature: 0.3,
-    }),
+  return callChatCompletion({
+    provider,
+    apiKey,
+    model,
+    systemPrompt:
+      "You are a careful, evidence-grounded AMR research analyst. You only reference the named programs/papers given to you. You never invent statistics, studies, or citations. You clearly distinguish local data from general published knowledge.",
+    userPrompt: prompt,
+    maxTokens: 700,
+    temperature: 0.3,
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Groq API error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content?.trim() || "No response generated.";
 }
-export async function extractRecordsFromNotes({ apiKey, rawText, model = DEFAULT_MODEL }) {
-  if (!apiKey) {
-    throw new Error("Missing Groq API key. Add it in Settings before extracting from documents.");
-  }
 
+export async function extractRecordsFromNotes({ provider = "groq", apiKey, model, rawText }) {
   const prompt = `Extract structured infection-surveillance records from the following clinical notes text. Return ONLY a JSON array (no markdown, no commentary), where each item has exactly these fields:
 patient_id, episode_date, infection_site, procedure_type, organism, antimicrobial_given, route, susceptibility_result, outcome.
 Use "" for any field not mentioned. Do not invent data not present in the text.
@@ -156,31 +199,17 @@ TEXT:
 ${rawText.slice(0, 12000)}
 """`;
 
-  const res = await fetch(GROQ_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "You extract structured clinical data as strict JSON only. No prose, no markdown fences." },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 2000,
-      temperature: 0,
-    }),
+  const text = await callChatCompletion({
+    provider,
+    apiKey,
+    model,
+    systemPrompt: "You extract structured clinical data as strict JSON only. No prose, no markdown fences.",
+    userPrompt: prompt,
+    maxTokens: 2000,
+    temperature: 0,
   });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Groq API error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content?.trim() || "[]";
-  const cleaned = text.replace(/^```json\s*|```$/g, "").trim();
+  const cleaned = (text || "[]").replace(/^```json\s*|```$/g, "").trim();
   try {
     return JSON.parse(cleaned);
   } catch {

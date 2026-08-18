@@ -11,7 +11,7 @@ import TrendAnalysisPanel from "./components/TrendAnalysisPanel.jsx";
 import MicrobiologyGlossary from "./components/MicrobiologyGlossary.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
-import { extractRecordsFromNotes } from "./lib/groqClient.js";
+import { extractRecordsFromNotes } from "./lib/aiClient.js";
 
 function SectionHeading({ icon: Icon, title, tone = "brand", children }) {
   const toneClass = {
@@ -36,7 +36,10 @@ function SectionHeading({ icon: Icon, title, tone = "brand", children }) {
 
 export default function App() {
   const [rawRows, setRawRows] = useState([]);
-  const [apiKey, setApiKey] = useState("");
+  const [provider, setProvider] = useState("groq");
+  const [apiKeys, setApiKeys] = useState({ groq: "", gemini: "" });
+  const apiKey = apiKeys[provider] || "";
+  const setApiKeyForProvider = (key) => setApiKeys((prev) => ({ ...prev, [provider]: key }));
   const [docBusy, setDocBusy] = useState(false);
   const [docError, setDocError] = useState(null);
   const [narrative, setNarrative] = useState("");
@@ -57,7 +60,7 @@ export default function App() {
     try {
       const allExtracted = [];
       for (const doc of docTexts) {
-        const extracted = await extractRecordsFromNotes({ apiKey, rawText: doc.rawText });
+        const extracted = await extractRecordsFromNotes({ provider, apiKey, rawText: doc.rawText });
         allExtracted.push(...extracted);
       }
       setRawRows((prev) => [...prev, ...allExtracted]);
@@ -188,8 +191,10 @@ export default function App() {
                 flags={flags}
                 remedies={remedies}
                 meta={{ recordCount: records.length }}
+                provider={provider}
+                setProvider={setProvider}
                 apiKey={apiKey}
-                setApiKey={setApiKey}
+                setApiKey={setApiKeyForProvider}
                 onNarrativeChange={setNarrative}
               />
             </section>
@@ -201,6 +206,7 @@ export default function App() {
                 antibiogram={antibiogram}
                 flags={flags}
                 meta={{ recordCount: records.length }}
+                provider={provider}
                 apiKey={apiKey}
                 onInsightChange={setTrendsInsight}
               />
