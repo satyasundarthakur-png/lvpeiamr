@@ -32,14 +32,19 @@ export default function ExportButtons({ antibiogram, flags, remedies, narrative,
 
   const branding = { instituteName, logoDataUrl };
 
+  const [exportError, setExportError] = useState(null);
+
   const handleExport = async (format) => {
     setBusy(format);
+    setExportError(null);
     try {
       if (format === "docx") {
         await exportDocx({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding });
       } else {
         exportPdf({ antibiogram, flags, remedies, narrative, trendsInsight, trendSeries, meta, branding });
       }
+    } catch (err) {
+      setExportError(err.message || "Export failed — please try again or use the other format.");
     } finally {
       setBusy(null);
     }
@@ -71,6 +76,12 @@ export default function ExportButtons({ antibiogram, flags, remedies, narrative,
           </button>
         ))}
       </div>
+
+      {exportError && (
+        <p className="w-full max-w-sm text-xs text-danger bg-danger/8 rounded-lg p-2.5 text-left">
+          {exportError}
+        </p>
+      )}
 
       {showBranding && (
         <div className="w-full max-w-sm rounded-xl border border-ink/12 bg-background p-3 text-left shadow-sm">

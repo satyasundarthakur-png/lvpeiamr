@@ -11,6 +11,7 @@ import TrendAnalysisPanel from "./components/TrendAnalysisPanel.jsx";
 import MicrobiologyGlossary from "./components/MicrobiologyGlossary.jsx";
 import ExportButtons from "./components/ExportButtons.jsx";
 import { standardizeDataset, buildAntibiogram, flagPatterns, suggestRemedies } from "./lib/analyze.js";
+import { diagnoseUploadedColumns } from "./lib/fileParsers.js";
 import { buildResistanceTrends } from "./lib/trendAnalysis.js";
 import { extractRecordsFromNotes } from "./lib/aiClient.js";
 
@@ -63,6 +64,15 @@ export default function App() {
     const { series } = buildResistanceTrends(records, { granularity: "monthly" });
     return series.filter((s) => !s.trend.label.startsWith("Insufficient data"));
   }, [records]);
+
+  // Detects a real, otherwise-silent failure mode: a spreadsheet uploads
+  // fine (rawRows populates) but has no recognizable organism /
+  // antimicrobial / susceptibility-result columns — e.g. a prescription-
+  // compliance audit sheet rather than culture/susceptibility surveillance
+  // data. Without this check, the antibiogram silently stays empty and
+  // every AI button appears broken with no explanation.
+  const columnDiagnosis = useMemo(() => diagnoseUploadedColumns(rawRows), [rawRows]);
+  const showSchemaMismatchWarning = columnDiagnosis?.allCriticalMissing && antibiogram.length === 0;
 
   const handleTabularParsed = (rows) => {
     setRawRows((prev) => [...prev, ...rows]);
@@ -149,6 +159,32 @@ export default function App() {
               <p className="mt-3 rounded-lg border border-danger/20 bg-danger/8 p-3 text-sm text-danger">
                 {docError}
               </p>
+            )}
+            {showSchemaMismatchWarning && (
+              <div className="mt-3 rounded-lg border border-warn/30 bg-amber/10 p-4 text-sm text-ink/70">
+                <p className="font-semibold text-ink mb-1">
+                  {columnDiagnosis.totalRows} row(s) uploaded, but no organism, antimicrobial, or
+                  susceptibility-result data was recognized.
+                </p>
+                <p className="leading-relaxed">
+                  This tool needs culture/susceptibility surveillance data (columns like{" "}
+                  <code className="text-xs bg-ink/8 rounded px-1">organism</code>,{" "}
+                  <code className="text-xs bg-ink/8 rounded px-1">antimicrobial_given</code>,{" "}
+                  <code className="text-xs bg-ink/8 rounded px-1">susceptibility_result</code> or their aliases) to
+                  build an antibiogram. Without those, the antibiogram stays empty and every AI/analysis feature
+                  below will look unresponsive — that's this, not a bug in the AI provider or your API key.
+                </p>
+                {columnDiagnosis.unrecognizedHeaders.length > 0 && (
+                  <p className="mt-2 text-xs text-ink/50">
+                    Columns found in your file that weren't recognized: {columnDiagnosis.unrecognizedHeaders.join(", ")}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-ink/50">
+                  If this is a different kind of audit (e.g. a prescription/policy-compliance review rather than
+                  culture data), this tool isn't the right fit for it as-is — it's built specifically around
+                  organism/antimicrobial susceptibility surveillance.
+                </p>
+              </div>
             )}
           </div>
         </section>

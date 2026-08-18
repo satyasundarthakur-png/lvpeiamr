@@ -145,6 +145,13 @@ export default function TrendsInsightPanel({ records, antibiogram, flags, meta, 
       {!apiKey && (
         <p className="text-xs text-ink/45 mt-2">Add an API key in the AI summary section above to enable this.</p>
       )}
+      {apiKey && antibiogram.length === 0 && (
+        <p className="text-xs text-warn mt-2">
+          No antibiogram data available — this isn't an API key or provider issue. Your uploaded file has no
+          recognized organism/antimicrobial/susceptibility-result data (see the warning near the upload section if
+          one appeared).
+        </p>
+      )}
 
       {error && <p className="mt-3 text-sm text-danger bg-danger/8 rounded-md p-3">{error}</p>}
 

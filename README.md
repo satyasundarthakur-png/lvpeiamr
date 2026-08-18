@@ -15,7 +15,13 @@ all processed in your browser.
 1. **Upload** — CSV, Excel (`.xlsx`/`.xls`), or Word (`.docx`) clinical notes.
    Free-text notes are structured into records via an LLM call; tabular files
    are parsed directly. Column headers are matched flexibly (e.g. "Antibiotic
-   Given" and "Drug Used" both map to `antimicrobial_given`).
+   Given" and "Drug Used" both map to `antimicrobial_given`). If a file
+   parses fine but has no recognizable organism/antimicrobial/susceptibility-
+   result columns (e.g. a prescription-compliance audit sheet rather than
+   culture data), a visible warning explains this explicitly — otherwise the
+   antibiogram silently stays empty and every AI feature looks broken with
+   no explanation, which is easy to mistake for an API key or provider
+   problem. See `diagnoseUploadedColumns()` in `lib/fileParsers.js`.
 2. **Anonymize** — every upload is run through a client-side anonymization
    layer before anything is displayed or sent anywhere:
    - Direct identifiers (name, DOB, phone, email, address, Aadhaar,

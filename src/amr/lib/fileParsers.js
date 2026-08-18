@@ -121,3 +121,34 @@ export async function parseUploadedFile(file) {
   }
   throw new Error(`Unsupported file type: ${file.name}. Please upload .csv, .xlsx, .xls, or .docx`);
 }
+
+// The three fields without which the app cannot compute an antibiogram at
+// all — organism, antimicrobial_given, susceptibility_result. If a header
+// mapping produces none of these (e.g. a prescription-compliance audit
+// spreadsheet with columns like Uid/diagnosis/prescription rather than
+// culture/susceptibility data), the app will silently parse rows, produce
+// zero antibiogram entries, and every AI/analysis feature will appear
+// "broken" with no error message — the actual cause (wrong kind of
+// spreadsheet for this tool, or unrecognized column names) is invisible
+// unless surfaced explicitly. This diagnostic exists so the UI can show
+// the real reason instead of a mysterious dead button.
+export function diagnoseUploadedColumns(rows) {
+  if (!rows || rows.length === 0) return null;
+  const allKeys = new Set();
+  rows.forEach((r) => Object.keys(r).forEach((k) => allKeys.add(k)));
+
+  const CRITICAL_FIELDS = ["organism", "antimicrobial_given", "susceptibility_result"];
+  const hasAnyValue = (field) => rows.some((r) => r[field] != null && String(r[field]).trim() !== "");
+  const missingCritical = CRITICAL_FIELDS.filter((f) => !hasAnyValue(f));
+
+  const recognizedFields = EXPECTED_FIELDS.filter((f) => hasAnyValue(f));
+  const unrecognizedHeaders = [...allKeys].filter((k) => !EXPECTED_FIELDS.includes(k));
+
+  return {
+    totalRows: rows.length,
+    missingCritical, // subset of CRITICAL_FIELDS that have no data at all
+    allCriticalMissing: missingCritical.length === CRITICAL_FIELDS.length,
+    recognizedFields,
+    unrecognizedHeaders,
+  };
+}

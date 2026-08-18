@@ -86,6 +86,16 @@ export default function PolicyNarrative({ antibiogram, flags, remedies, meta, pr
         {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
         {loading ? "Analyzing…" : `Generate summary (${providerInfo.label})`}
       </button>
+      {!apiKey && antibiogram.length > 0 && (
+        <p className="text-xs text-ink/45 mt-2">Add an API key above to enable this.</p>
+      )}
+      {apiKey && antibiogram.length === 0 && (
+        <p className="text-xs text-warn mt-2">
+          No antibiogram data available — this isn't an API key or provider issue. Your uploaded file has no
+          recognized organism/antimicrobial/susceptibility-result data (see the warning above if one appeared
+          after upload).
+        </p>
+      )}
 
       {error && (
         <p className="mt-3 text-sm text-danger bg-danger/8 rounded-md p-3">{error}</p>
