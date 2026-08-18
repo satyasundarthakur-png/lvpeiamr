@@ -1,17 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Search, Bug, Pill, MapPinned, CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
+import { Search, Bug, Pill, MapPinned, CheckCircle2, AlertTriangle, HelpCircle, Combine } from "lucide-react";
 import { ORGANISMS } from "../data/organisms.js";
 import { ANTIMICROBIALS } from "../data/antimicrobials.js";
 import { INFECTION_SITES } from "../data/infectionSites.js";
+import { searchCombinationRegimens, getRegimensForDrugCode } from "../data/combinationRegimens.js";
 import { getRecognitionAudit } from "../lib/analyze.js";
 
 const TABS = [
   { id: "organisms", label: "Organisms", icon: Bug },
   { id: "antimicrobials", label: "Antimicrobials", icon: Pill },
   { id: "sites", label: "Infection sites", icon: MapPinned },
+  { id: "combinations", label: "Combination therapy", icon: Combine },
 ];
 
-function GlossaryCard({ title, subtitle, note, chips }) {
+function GlossaryCard({ title, subtitle, note, chips, relatedRegimens }) {
   return (
     <div className="rounded-xl border border-ink/10 p-3.5">
       <div className="flex items-start justify-between gap-2">
@@ -32,6 +34,37 @@ function GlossaryCard({ title, subtitle, note, chips }) {
           ))}
         </div>
       )}
+      {relatedRegimens && relatedRegimens.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-ink/8">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-ink/40 mb-1 flex items-center gap-1">
+            <Combine size={11} /> Used in combination regimens
+          </p>
+          <ul className="space-y-0.5">
+            {relatedRegimens.map((r) => (
+              <li key={r.id} className="text-xs text-brand/90">
+                {r.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CombinationCard({ regimen }) {
+  return (
+    <div className="rounded-xl border border-ink/10 p-3.5">
+      <p className="font-medium text-ink text-sm">{regimen.name}</p>
+      <p className="mt-1 text-xs font-medium text-brand">{regimen.indication}</p>
+      <p className="mt-1.5 text-xs text-ink/60 leading-relaxed">{regimen.mechanism}</p>
+      {regimen.caveat && (
+        <p className="mt-1.5 text-xs text-warn/90 leading-relaxed flex items-start gap-1">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+          {regimen.caveat}
+        </p>
+      )}
+      <p className="mt-2 text-[11px] text-ink/40 italic">Source: {regimen.source}</p>
     </div>
   );
 }
@@ -49,7 +82,8 @@ export default function MicrobiologyGlossary({ records = [] }) {
 
     if (tab === "organisms") return ORGANISMS.filter((o) => o.code !== "OTHER" && matches(o.name, o.synonyms));
     if (tab === "antimicrobials") return ANTIMICROBIALS.filter((a) => a.code !== "OTHER" && matches(a.name, a.synonyms));
-    return INFECTION_SITES.filter((s) => s.code !== "UNSPEC" && matches(s.name, s.synonyms));
+    if (tab === "sites") return INFECTION_SITES.filter((s) => s.code !== "UNSPEC" && matches(s.name, s.synonyms));
+    return searchCombinationRegimens(q);
   }, [tab, query]);
 
   const hasRecognitionIssues = audit.fuzzyMatches.length > 0 || audit.unmapped.length > 0;
@@ -61,8 +95,9 @@ export default function MicrobiologyGlossary({ records = [] }) {
         <h3 className="font-semibold text-ink">Ophthalmic microbiology glossary</h3>
       </div>
       <p className="text-sm text-ink/60 mb-4">
-        Reference taxonomy for ocular pathogens, antimicrobials, and infection sites — the same recognition
-        rules used to standardize your uploaded data, browsable for quick lookup.
+        Reference taxonomy for ocular pathogens, antimicrobials, infection sites, and established combination
+        therapy regimens — the same recognition rules used to standardize your uploaded data, browsable for
+        quick lookup.
       </p>
 
       {records.length > 0 && (
@@ -145,13 +180,28 @@ export default function MicrobiologyGlossary({ records = [] }) {
           ))}
         {tab === "antimicrobials" &&
           filtered.map((a) => (
-            <GlossaryCard key={a.code} title={a.name} subtitle={a.class} note={`Typical route: ${a.route}`} chips={a.synonyms} />
+            <GlossaryCard
+              key={a.code}
+              title={a.name}
+              subtitle={a.class}
+              note={`Typical route: ${a.route}`}
+              chips={a.synonyms}
+              relatedRegimens={getRegimensForDrugCode(a.code)}
+            />
           ))}
         {tab === "sites" &&
           filtered.map((s) => (
             <GlossaryCard key={s.code} title={s.name} subtitle={s.category} note={s.note} chips={s.synonyms} />
           ))}
+        {tab === "combinations" && filtered.map((r) => <CombinationCard key={r.id} regimen={r} />)}
       </div>
+      {tab === "combinations" && (
+        <p className="mt-3 text-xs text-ink/40 leading-relaxed">
+          Curated, hand-verified reference regimens with cited sources — not a live drug-interaction database or
+          dosing tool. Concentrations, formulations, and appropriateness vary by institution and local
+          antibiogram; confirm against current local protocol and pharmacist review before use.
+        </p>
+      )}
     </div>
   );
 }

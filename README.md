@@ -28,10 +28,13 @@ all processed in your browser.
    - See `src/amr/lib/anonymize.js`. This is best-effort, not a compliance
      guarantee — review extracted output before relying on it for real
      patient data.
-3. **Standardize** — organism and antimicrobial names are mapped to a
-   reference taxonomy weighted toward ophthalmic pathogens (`data/organisms.js`,
-   `data/antimicrobials.js`), so messy spellings and abbreviations
-   (`"p aeruginosa"`, `"moxi"`) resolve to canonical entries.
+3. **Standardize** — organism, antimicrobial, and infection-site names are
+   mapped to a reference taxonomy weighted toward ophthalmic pathogens
+   (`data/organisms.js`, `data/antimicrobials.js`, `data/infectionSites.js`),
+   with a fuzzy-matching fallback for typos, so messy spellings and
+   abbreviations (`"p aeruginosa"`, `"moxi"`, `"psuedomonas"`) still resolve
+   to canonical entries. A recognition audit in the glossary shows exactly
+   what was fuzzy-corrected vs. genuinely unrecognized in your data.
 4. **Analyze** — an antibiogram is built following **CLSI M39** cumulative-antibiogram
    methodology (the same standard used by WHONET and the R `AMR` package): only the
    first isolate per patient per organism in the dataset counts by default, so a
@@ -52,6 +55,12 @@ all processed in your browser.
 6. **Report** — export a `.docx` or `.pdf` stewardship report, optionally
    including an AI-generated plain-language summary and policy
    recommendation grounded strictly in the uploaded data.
+7. **Reference** — a standalone Microbiology Reference tool (available even
+   without uploaded data) covers organisms, antimicrobials, infection sites,
+   and established combination-therapy/synergy regimens used in ophthalmic
+   infection management (e.g. fortified cefazolin+tobramycin for bacterial
+   keratitis, intravitreal vancomycin+ceftazidime for endophthalmitis) — each
+   entry cites its clinical source. See `data/combinationRegimens.js`.
 
 ## Architecture
 
